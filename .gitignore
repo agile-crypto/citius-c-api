@@ -1,0 +1,38 @@
+# CMake build output
+build/
+build-*/
+cmake-build-*/
+out/
+
+# Compiled objects / libraries / binaries
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+
+# CMake-generated files (in case of an in-source configure)
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Test artifacts
+Testing/
+*.log
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
