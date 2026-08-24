@@ -39,6 +39,10 @@ agc_add_test(test_provider test_provider.c)
 agc_add_whitebox_test(test_protobuf_wire test_protobuf_wire.c)
 agc_add_whitebox_test(test_metadata_codec test_metadata_codec.c)
 
+if(AGC_ENABLE_PROPOSED_EXTENSIONS)
+    agc_add_test(test_ext test_ext.c)
+endif()
+
 # Tier 1 vocabulary conformance (RECONCILIATION_PLAN.md §7): the generated
 # agc_types.h must carry exactly the proto's enum values, no more, no fewer.
 find_package(Python3 COMPONENTS Interpreter)

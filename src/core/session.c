@@ -106,6 +106,16 @@ void agc__session_force_close(agc_session *s)
     if (!s->destroyed && s->ops.destroy) {
         s->ops.destroy(s->impl_state);
     }
+    /* Every family's Update/Final rejects a closed session by checking
+     * `!st` from agc__session_impl_state() first (e.g. agc_digest_update()
+     * in stream.c). That check is worthless against a dangling pointer --
+     * the freed impl_state address is still non-NULL -- so it must actually
+     * become NULL here, not just conceptually "closed". Caught by ASan
+     * (heap-use-after-free) via agc_ext_cancel_operation() calling
+     * agc_session_cancel() and a subsequent agc_digest_update() on the same
+     * handle: is_open/destroyed alone do not protect the family code that
+     * only ever inspects the impl_state pointer it got back. */
+    s->impl_state = NULL;
     s->destroyed = 1;
     s->is_open = 0;
 }

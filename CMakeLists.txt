@@ -47,6 +47,14 @@ set(AGC_LIB_SOURCES
     src/services/provider.c
 )
 
+# agc_ext.h/ext.c (commit 13, D16): proposed, not-yet-standard extensions.
+# Kept out of AGC_LIB_SOURCES itself so a build with the option off never
+# even compiles this file -- "off by default" all the way down, not just a
+# header guard.
+if(AGC_ENABLE_PROPOSED_EXTENSIONS)
+    list(APPEND AGC_LIB_SOURCES src/services/ext.c)
+endif()
+
 add_library(agilecrypto SHARED ${AGC_LIB_SOURCES})
 
 target_include_directories(agilecrypto
