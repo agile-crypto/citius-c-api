@@ -326,7 +326,7 @@ typedef struct agc_digest_init_params {
 } agc_digest_init_params;
 
 /* The template the service selected is available from
- * agc_session_selected_template(*out_session). */
+ * agc_session_selected_template_id(*out_session). */
 AGC_API agc_rc agc_digest_init(agc_ctx *ctx, const agc_digest_init_params *p, agc_session **out_session);
 AGC_API agc_rc agc_digest_update(agc_session *s, agc_slice data_chunk);
 

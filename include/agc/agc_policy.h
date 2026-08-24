@@ -101,16 +101,28 @@ AGC_API int                      agc_policy_decision_allowed(const agc_policy_de
 AGC_API agc_policy_denial_reason agc_policy_decision_denial_reason(const agc_policy_decision *d);
 AGC_API const char              *agc_policy_decision_message(const agc_policy_decision *d);
 
-/* PolicyDecisionDetails -- audit trail for the decision. */
+/* PolicyDecisionDetails -- audit trail for the decision.
+ *
+ * checks_performed lists every check the evaluator actually ran; since
+ * this stub evaluator's real semantics are a single substring test against
+ * the opaque policy document (see policy.c's module comment), that list
+ * always has exactly one entry: the operation name checked.
+ * PolicyDecisionDetails.allowed_operations is NOT projected here -- the
+ * stub evaluator answers "is THIS operation allowed", never "list every
+ * operation this policy allows", which is a different (and, for an opaque
+ * text document, considerably harder) question this reconciliation does
+ * not attempt. */
 AGC_API const char   *agc_policy_decision_policy_name(const agc_policy_decision *d);
 AGC_API const char   *agc_policy_decision_policy_version(const agc_policy_decision *d);
 AGC_API agc_timestamp agc_policy_decision_timestamp(const agc_policy_decision *d);
 AGC_API const char   *agc_policy_decision_failed_check(const agc_policy_decision *d);
-AGC_API size_t        agc_policy_decision_check_count(const agc_policy_decision *d);
-AGC_API const char   *agc_policy_decision_check_at(const agc_policy_decision *d, size_t i);
+AGC_API size_t        agc_policy_decision_checks_performed_count(const agc_policy_decision *d);
+AGC_API const char   *agc_policy_decision_checks_performed_at(const agc_policy_decision *d, size_t i);
 
-/* Helpful alternatives for a denied decision. */
-AGC_API size_t      agc_policy_decision_allowed_template_count(const agc_policy_decision *d);
+/* Helpful alternatives for a denied decision. Always 0 items in this
+ * build: the minimal evaluator never computes an allow-list of OTHER
+ * templates, only a yes/no on the one operation asked about. */
+AGC_API size_t      agc_policy_decision_allowed_templates_count(const agc_policy_decision *d);
 AGC_API const char *agc_policy_decision_allowed_template_at(const agc_policy_decision *d, size_t i);
 
 #ifdef __cplusplus

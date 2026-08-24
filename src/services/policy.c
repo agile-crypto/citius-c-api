@@ -28,6 +28,8 @@ struct agc_policy_decision {
     char                    *message;
     char                    *policy_name;
     char                    *failed_check;
+    char                    *checks_performed[1]; /* always exactly one: the operation checked */
+    size_t                   checks_performed_count;
     char                   **allowed_templates;
     size_t                   allowed_template_count;
 };
@@ -38,6 +40,7 @@ static void free_decision(struct agc_policy_decision *d)
     free(d->message);
     free(d->policy_name);
     free(d->failed_check);
+    for (size_t i = 0; i < d->checks_performed_count; i++) free(d->checks_performed[i]);
     for (size_t i = 0; i < d->allowed_template_count; i++) free(d->allowed_templates[i]);
     free(d->allowed_templates);
     free(d);
@@ -72,6 +75,9 @@ static agc_rc evaluate_one(agc_ctx *ctx, const agc_evaluate_policy_request *req,
     d->policy_name = strdup(req->policy_name);
 
     const char *op_name = agc_crypto_operation_name(req->operation);
+    d->checks_performed[0] = strdup(op_name);
+    d->checks_performed_count = 1;
+
     char deny_needle[160], forbid_needle[160];
     snprintf(deny_needle, sizeof(deny_needle), "deny:%s", op_name);
     snprintf(forbid_needle, sizeof(forbid_needle), "forbid:%s", op_name);
@@ -131,9 +137,16 @@ const char *agc_policy_decision_policy_name(const agc_policy_decision *d) { retu
 const char *agc_policy_decision_policy_version(const agc_policy_decision *d) { (void)d; return NULL; }
 agc_timestamp agc_policy_decision_timestamp(const agc_policy_decision *d) { (void)d; return (agc_timestamp){0}; }
 const char *agc_policy_decision_failed_check(const agc_policy_decision *d) { return d ? d->failed_check : NULL; }
-size_t agc_policy_decision_check_count(const agc_policy_decision *d) { (void)d; return 0; }
-const char *agc_policy_decision_check_at(const agc_policy_decision *d, size_t i) { (void)d; (void)i; return NULL; }
-size_t agc_policy_decision_allowed_template_count(const agc_policy_decision *d)
+size_t agc_policy_decision_checks_performed_count(const agc_policy_decision *d)
+{
+    return d ? d->checks_performed_count : 0;
+}
+const char *agc_policy_decision_checks_performed_at(const agc_policy_decision *d, size_t i)
+{
+    if (!d || i >= d->checks_performed_count) return NULL;
+    return d->checks_performed[i];
+}
+size_t agc_policy_decision_allowed_templates_count(const agc_policy_decision *d)
 {
     return d ? d->allowed_template_count : 0;
 }

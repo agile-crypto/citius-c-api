@@ -350,7 +350,7 @@ AGC_API agc_crypto_operation agc_session_operation(const agc_session *s);
 /* Template the service selected for this session, when the session was
  * opened by intent rather than by key (DigestInit, XofInit). NULL
  * otherwise. */
-AGC_API const char *agc_session_selected_template(const agc_session *s);
+AGC_API const char *agc_session_selected_template_id(const agc_session *s);
 
 /* Aborts a session and releases all state (CancelOperation-shaped, though
  * CancelOperation itself is not an RPC -- see docs/PROTO_RFCS.md RFC-14).

@@ -1,0 +1,150 @@
+# Machine-checked RPC <-> C entry-point bijection (RECONCILIATION_PLAN.md
+# §7 Tier 1b). Hand-authored once, from the same header work done in
+# commits 7-11, then verified by tier1b_surface.py against BOTH directions:
+#
+#   forward:  every RPC in the pinned descriptor (conformance/api_descriptor.binpb)
+#             has an entry here, and its `function` is a real AGC_API
+#             declaration in `header`.
+#   reverse:  every `agc_ctx *ctx`-taking AGC_API function declared in the
+#             7 service headers is either the `function` of some entry here,
+#             or listed in `non_rpc_ctx_helpers` below with a reason.
+#
+# This is the structural fix for the audit's "Version B invented 8 phantom
+# RPCs" and "claimed 98 RPCs" findings (C_API_COMPARISON.md B1/B2): a
+# function that exists but maps to no real RPC, or an RPC with no function,
+# both fail the check instead of going unnoticed.
+#
+# agc_ext.h (commit 13, AGC_ENABLE_PROPOSED_EXTENSIONS) is deliberately
+# excluded from both this file and the header scan in tier1b_surface.py
+# (D16): those functions have no RPC to map to by construction.
+
+services:
+  CryptoService:
+    header: agc_crypto.h
+    rpcs:
+      Encrypt: agc_encrypt
+      Decrypt: agc_decrypt
+      Sign: agc_sign
+      Verify: agc_verify
+      DigestSign: agc_digest_sign
+      DigestVerify: agc_digest_verify
+      GenerateMAC: agc_generate_mac
+      VerifyMAC: agc_verify_mac
+      Digest: agc_digest
+      Xof: agc_xof
+      GenerateRandom: agc_generate_random
+      SeedRandom: agc_seed_random
+
+  StreamingCryptoService:
+    header: agc_stream.h
+    rpcs:
+      EncryptInit: agc_encrypt_init
+      EncryptUpdate: agc_encrypt_update
+      EncryptFinal: agc_encrypt_final
+      DecryptInit: agc_decrypt_init
+      DecryptUpdate: agc_decrypt_update
+      DecryptFinal: agc_decrypt_final
+      EncryptMessageInit: agc_encrypt_message_init
+      EncryptMessage: agc_encrypt_message
+      EncryptMessageBegin: agc_encrypt_message_begin
+      EncryptMessageNext: agc_encrypt_message_next
+      EncryptMessageFinal: agc_encrypt_message_final
+      DecryptMessageInit: agc_decrypt_message_init
+      DecryptMessage: agc_decrypt_message
+      DecryptMessageBegin: agc_decrypt_message_begin
+      DecryptMessageNext: agc_decrypt_message_next
+      DecryptMessageFinal: agc_decrypt_message_final
+      SignInit: agc_sign_init
+      SignUpdate: agc_sign_update
+      SignFinal: agc_sign_final
+      VerifyInit: agc_verify_init
+      VerifyUpdate: agc_verify_update
+      VerifyFinal: agc_verify_final
+      SignMessageInit: agc_sign_message_init
+      SignMessage: agc_sign_message
+      SignMessageBegin: agc_sign_message_begin
+      SignMessageNext: agc_sign_message_next
+      SignMessageFinal: agc_sign_message_final
+      VerifyMessageInit: agc_verify_message_init
+      VerifyMessage: agc_verify_message
+      VerifyMessageBegin: agc_verify_message_begin
+      VerifyMessageNext: agc_verify_message_next
+      VerifyMessageFinal: agc_verify_message_final
+      DigestInit: agc_digest_init
+      DigestUpdate: agc_digest_update
+      DigestKey: agc_digest_key
+      DigestFinal: agc_digest_final
+      XofInit: agc_xof_init
+      XofUpdate: agc_xof_update
+      XofFinal: agc_xof_final
+      DigestEncryptUpdate: agc_digest_encrypt_update
+      DecryptDigestUpdate: agc_decrypt_digest_update
+      SignEncryptUpdate: agc_sign_encrypt_update
+      DecryptVerifyUpdate: agc_decrypt_verify_update
+
+  KeyManagementService:
+    header: agc_key.h
+    rpcs:
+      CreateKey: agc_create_key
+      ReadKey: agc_read_key
+      ListKeys: agc_list_keys
+      DeleteKey: agc_delete_key
+      RotateKey: agc_rotate_key
+      TransformKey: agc_transform_key
+      UpdateKeyPolicy: agc_update_key_policy
+      MigrateKey: agc_migrate_key
+      ValidateKeyOperation: agc_validate_key_operation
+      ExportKey: agc_export_key
+      ImportKey: agc_import_key
+
+  KeyEstablishmentService:
+    header: agc_establish.h
+    rpcs:
+      WrapKey: agc_wrap_key
+      UnwrapKey: agc_unwrap_key
+      DeriveKey: agc_derive_key
+      KeyAgreement: agc_key_agreement
+      EncapsulateKey: agc_encapsulate_key
+      DecapsulateKey: agc_decapsulate_key
+
+  CryptoPolicyService:
+    header: agc_policy.h
+    rpcs:
+      CreateCryptoPolicy: agc_create_policy
+      ReadCryptoPolicy: agc_read_policy
+      DeleteCryptoPolicy: agc_delete_policy
+      UpdateCryptoPolicy: agc_update_policy
+      ListCryptoPolicies: agc_list_policies
+      EvaluatePolicy: agc_evaluate_policy
+      BatchEvaluatePolicy: agc_batch_evaluate_policy
+
+  ProviderService:
+    header: agc_provider.h
+    rpcs:
+      ListProviders: agc_list_providers
+      GetProvider: agc_get_provider
+      RegisterProviderInstance: agc_register_provider_instance
+      ListProviderInstances: agc_list_provider_instances
+      GetProviderInstance: agc_get_provider_instance
+      UpdateProviderInstance: agc_update_provider_instance
+      DeleteProviderInstance: agc_delete_provider_instance
+      MatchProviders: agc_match_providers
+
+  AlgorithmDiscoveryService:
+    header: agc_discovery.h
+    rpcs:
+      ListTemplates: agc_list_templates
+      GetTemplate: agc_get_template
+      ListScopes: agc_list_scopes
+
+# ctx-taking AGC_API functions in the 7 service headers that are NOT RPC
+# entry points, with the reason they exist. Anything ctx-taking absent from
+# both this list and the `rpcs` maps above is a phantom function (fails the
+# reverse check).
+non_rpc_ctx_helpers:
+  - function: agc_random_bytes
+    header: agc_crypto.h
+    reason: >
+      Convenience wrapper over agc_generate_random() for the overwhelmingly
+      common case (raw bytes, no algorithm selection); documented as such in
+      agc_crypto.h. Not itself a wire operation.

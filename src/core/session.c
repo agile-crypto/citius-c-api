@@ -124,7 +124,7 @@ agc_crypto_operation agc_session_operation(const agc_session *s)
     return s ? s->operation : AGC_CRYPTO_OPERATION_UNSPECIFIED;
 }
 
-const char *agc_session_selected_template(const agc_session *s)
+const char *agc_session_selected_template_id(const agc_session *s)
 {
     return s ? s->selected_template : NULL;
 }

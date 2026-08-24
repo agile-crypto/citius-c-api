@@ -37,7 +37,7 @@ int main(void)
     agc_session_free(NULL);
     AGC_ASSERT(agc_session_id(NULL) == NULL);
     AGC_ASSERT_EQ_INT(agc_session_operation(NULL), AGC_CRYPTO_OPERATION_UNSPECIFIED);
-    AGC_ASSERT(agc_session_selected_template(NULL) == NULL);
+    AGC_ASSERT(agc_session_selected_template_id(NULL) == NULL);
 
     agc_ctx_close(ctx);
     AGC_PASS("test_session");

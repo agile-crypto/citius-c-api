@@ -392,7 +392,7 @@ static void test_multipart_digest_and_xof(agc_ctx *ctx)
     dip.scope_spec = &hash_scope;
     agc_session *s = NULL;
     AGC_ASSERT_OK(agc_digest_init(ctx, &dip, &s));
-    AGC_ASSERT(agc_session_selected_template(s) != NULL);
+    AGC_ASSERT(agc_session_selected_template_id(s) != NULL);
 
     AGC_ASSERT_OK(agc_digest_update(s, (agc_slice){(const uint8_t *)"chunked-", 8}));
     AGC_ASSERT_OK(agc_digest_update(s, (agc_slice){(const uint8_t *)"digest", 6}));

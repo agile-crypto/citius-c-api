@@ -1,0 +1,303 @@
+# Machine-readable divergence register (RECONCILIATION_PLAN.md §4, D15).
+#
+# Every deliberate deviation of the C ABI from the wire proto is entered
+# here. This is the contract that makes the whole reconciliation checkable:
+# a construct that exists in the C headers but not the proto, or vice
+# versa, and is not listed here, is a bug by definition -- not a design
+# choice nobody wrote down. Version B's failure mode (C_API_COMPARISON.md)
+# was exactly this: divergences that were *discovered* during audit rather
+# than *declared* at design time.
+#
+# Schema per entry:
+#   id:        DV-NN, matches RECONCILIATION_PLAN.md §4
+#   summary:   one line
+#   reason:    why this divergence exists
+#   scope:     RPCs/messages/fields it applies to
+#   functions: the C entry points implementing it (informational; not all
+#              entries name specific functions, e.g. DV-11 is catalog-wide)
+#   gateway_mapping: how a real gRPC gateway in front of this library would
+#              translate the divergence back to the wire shape
+#   rfc:       docs/PROTO_RFCS.md id if resolving this requires a proto
+#              change, else null
+
+divergences:
+  - id: DV-01
+    summary: >
+      Verification returns AGC_ERR_CRYPTO_SIGNATURE_INVALID /
+      AGC_ERR_CRYPTO_AUTHENTICATION_FAILED instead of AGC_OK + valid=false.
+    reason: >
+      Fail-closed twice (D9): *out_valid is set to 0 before any work, and a
+      negative result also returns a non-OK agc_rc, so the classic C bug of
+      "rc ignored, valid left uninitialised" is caught by either check
+      alone.
+    scope:
+      - Verify
+      - DigestVerify
+      - VerifyMAC
+      - VerifyInit / VerifyUpdate / VerifyFinal
+      - VerifyMessageInit / VerifyMessage / VerifyMessageBegin / VerifyMessageNext / VerifyMessageFinal
+    functions:
+      - agc_verify
+      - agc_digest_verify
+      - agc_verify_mac
+      - agc_verify_final
+      - agc_verify_message
+      - agc_verify_message_final
+    gateway_mapping: "error code -> {valid: false}, not a transport error"
+    rfc: null
+
+  - id: DV-02
+    summary: GenerateRandom does not use two-call buffer sizing.
+    reason: >
+      Output length is num_bytes, a request field known before the call; a
+      size query would be pure ceremony (D5's rationale does not apply --
+      there is no algorithm-dependent output length here).
+    scope:
+      - GenerateRandom
+    functions:
+      - agc_generate_random
+    gateway_mapping: none
+    rfc: null
+
+  - id: DV-03
+    summary: >
+      SeedRandom returns AGC_OK with *out_accepted = 0 for "provider
+      declined the seed material", not an error code.
+    reason: >
+      The proto documents that a provider may reject caller-supplied
+      entropy; a bare success/failure bool cannot distinguish "declined"
+      from "failed", which are different operational conditions.
+    scope:
+      - SeedRandom
+    functions:
+      - agc_seed_random
+    gateway_mapping: "-> {success: false, message}"
+    rfc: null
+
+  - id: DV-04
+    summary: >
+      OperationMetadata metadata parameter added to agc_decrypt_init,
+      agc_decrypt_message, agc_decrypt_message_init -- fields absent from
+      DecryptInitRequest, DecryptMessageRequest, DecryptMessageBeginRequest
+      on the wire.
+    reason: >
+      Without the nonce/IV a provider cannot initialise decryption; these
+      functions are unimplementable without it. This is a real proto gap,
+      not a convenience.
+    scope:
+      - DecryptInit
+      - DecryptMessage
+      - DecryptMessageBegin
+    functions:
+      - agc_decrypt_init
+      - agc_decrypt_message
+      - agc_decrypt_message_init
+    gateway_mapping: "drop until RFC-04 lands; C-only sessions unaffected"
+    rfc: RFC-04
+
+  - id: DV-05
+    summary: "bool success + string message response fields not projected (14 messages)."
+    reason: >
+      Two representations of one outcome (D4): agc_rc plus agc_last_error()
+      is the single source of truth, so success/message never has a chance
+      to disagree with the return code.
+    scope:
+      - "every response message carrying a redundant success/message pair"
+    functions: []
+    gateway_mapping: "rc == AGC_OK -> {success: true}"
+    rfc: RFC-12
+
+  - id: DV-06
+    summary: operation_id (string) replaced by agc_session* in 37 streaming functions.
+    reason: >
+      A string hash/lookup per Update() in a hot loop is real, measurable
+      cost; a handle is also sanitizer-visible for use-after-free, which a
+      string id is not. agc_session_id()/agc_session_attach() keep the two
+      representations interconvertible so a caller that needs the wire id
+      (e.g. for audit correlation) still has it.
+    scope:
+      - "all *Init/*Update/*Final/*Begin/*Next RPCs in StreamingCryptoService"
+    functions: []
+    gateway_mapping: "id <-> handle via the session registry (agc__ctx_find_session)"
+    rfc: null
+
+  - id: DV-07
+    summary: >
+      page_size/page_token replaced by iterators (5 paged RPCs); proto
+      int32 page_size narrowed to uint32_t with a documented range check.
+    reason: >
+      Cursor bookkeeping does not belong in every call site (D12); EMBEDDED
+      mode has no network to page lazily over regardless, so the backing
+      store enumerates its full matching set at iterator-open time.
+    scope:
+      - ListKeys
+      - ListCryptoPolicies
+      - ListProviderInstances
+      - ListTemplates
+    functions:
+      - agc_list_keys
+      - agc_list_policies
+      - agc_list_provider_instances
+      - agc_list_templates
+    gateway_mapping: "iterator open/next drives the same page_size/page_token request fields"
+    rfc: null
+
+  - id: DV-08
+    summary: >
+      SecurityGuarantees reachable only via the template a key was created
+      from, not as a direct CreateKey response out-parameter.
+    reason: >
+      One path to one value; a second, independent path (a CreateKey
+      out-parameter) would eventually disagree with the template's own
+      value after a policy-driven re-selection.
+    scope:
+      - CreateKey
+    functions:
+      - agc_create_key
+    gateway_mapping: "populate the gateway response from the template lookup"
+    rfc: null
+
+  - id: DV-09
+    summary: MigrationResult and ArchivedKeyInfo merged into one agc_migration_report handle.
+    reason: One lifetime, one free() call, instead of two handles a caller must track together.
+    scope:
+      - MigrateKey
+    functions:
+      - agc_migrate_key
+      - agc_migration_report_free
+    gateway_mapping: "split back into MigrationResult + ArchivedKeyInfo on marshalling"
+    rfc: null
+
+  - id: DV-10
+    summary: >
+      Configurable local ceilings on Xof.output_length_bytes and
+      BatchEvaluatePolicy batch size (compile-/runtime-configurable, not
+      wired to a hard default in this reconciliation). Separately,
+      BatchEvaluatePolicyRequest's repeated field `evaluations` is
+      projected as a `(const agc_evaluate_policy_request *requests, size_t
+      count)` pair -- the universal C convention for a `repeated` field
+      throughout this API -- renamed from the proto's own field name for
+      clarity at the one call site that has it, since there is only ever
+      one repeated parameter in this signature to disambiguate from.
+    reason: >
+      Local resource-exhaustion defence for an embedded library; not a
+      proto-level constraint, so it must never be mistaken for one. The
+      pointer+count rename follows the same pattern used for every other
+      `repeated` field in the API and carries no semantic change.
+    scope:
+      - Xof
+      - BatchEvaluatePolicy
+    functions:
+      - agc_xof
+      - agc_batch_evaluate_policy
+    dropped_fields:
+      BatchEvaluatePolicyRequest: [evaluations]
+    gateway_mapping: none
+    rfc: RFC-07
+
+  - id: DV-11
+    summary: >
+      AlgorithmDetails (41-arm oneof), the algorithm_params.proto messages
+      and their nested enums are not projected into the ABI. TemplateInfo
+      is scoped down to id/display_name/description/status/standards/
+      primitive/capability-scopes. ScopeInfo is scoped down to
+      specification/name/description.
+    reason: >
+      Projecting the full catalog freezes algorithm-specific parameter
+      shapes into the ABI (D6): adding ML-KEM-1024 is a data change by the
+      proto's own design, and must not require a soname bump. This
+      reconciliation's stub catalog also has no real per-algorithm
+      parameter data behind any entry to project in the first place, so
+      TemplateInfo.deprecation_notice and ScopeInfo.typical_use_cases /
+      supported_operations have nothing genuine to populate them with
+      either -- every catalog entry is synthetic (RECONCILIATION_PLAN.md's
+      stub cryptography, applied to the catalog rather than the ciphers).
+    scope:
+      - GetTemplate
+      - ListTemplates
+      - ListScopes
+    functions:
+      - agc_get_template
+      - agc_list_templates
+      - agc_list_scopes
+    dropped_fields:
+      TemplateInfo: [deprecation_notice]
+      ScopeInfo: [typical_use_cases, supported_operations]
+    gateway_mapping: "full fidelity retained in a real deployment's _to_json() form (not implemented by the stub catalog)"
+    rfc: null
+
+  - id: DV-12
+    summary: >
+      ImplementationProperties.verification_framework, .hardware_features
+      and .unpatched_cves are not projected onto agc_impl_props (agc_provider.h).
+    reason: >
+      agc_provider.h's own SCOPING NOTE: this reconciliation implements the
+      subset of the ~13-field message a caller can meaningfully act on
+      (fips/constant-time/memory-safe posture) for a stub provider that has
+      no real audit trail, hardware feature list or CVE history behind it
+      to report. common_criteria_certified, no_known_cve, audits and
+      fips_140 are not exceptions to this: the two booleans are always
+      knowable (false, honestly) and the two message-typed fields are D6
+      opaque-handle candidates like any other, not scoped out.
+    scope:
+      - CreateKey (via KeyMetadata.implementation_properties)
+      - ListProviders
+      - GetProvider
+      - MatchProviders
+    functions:
+      - agc_provider_info_default_implementation
+      - agc_match_providers
+    dropped_fields:
+      ImplementationProperties: [verification_framework, hardware_features, unpatched_cves]
+    gateway_mapping: "unpopulated fields left at proto zero value"
+    rfc: null
+
+  - id: DV-13
+    summary: >
+      MigrationResult.source_instance_id / .target_instance_id and
+      ArchivedKeyInfo.allowed_operations are not projected onto
+      agc_migration_report. StrategyOption.security_notes is not projected
+      onto the feasibility report's per-option accessor.
+    reason: >
+      This reconciliation's KeyInfo tracks only the fixed static provider
+      TYPE ("stub"), never a caller-registered ProviderService instance id
+      (see agc_delete_provider_instance's own doc comment) -- there is no
+      instance concept bound to a key for a migration report to name on
+      either side. Similarly, no per-operation permission set is computed
+      for an archived key (the lifecycle model is coarser than that), and
+      the synthetic feasibility options in agc_validate_key_operation
+      generate an infeasibility_reason but never a separate free-text notes
+      list -- there is nothing genuine to put in one.
+    scope:
+      - MigrateKey
+      - ValidateKeyOperation
+    functions:
+      - agc_migrate_key
+      - agc_validate_key_operation
+    dropped_fields:
+      MigrationResult: [source_instance_id, target_instance_id]
+      ArchivedKeyInfo: [allowed_operations]
+      StrategyOption: [security_notes]
+    gateway_mapping: "unpopulated fields left at proto zero value"
+    rfc: null
+
+  - id: DV-14
+    summary: PolicyDecisionDetails.allowed_operations is not projected onto agc_policy_decision.
+    reason: >
+      policy.c's evaluator answers "is THIS operation allowed by this
+      policy", a single substring test against an opaque document (see its
+      own module comment); it never computes "list every operation this
+      policy allows", a materially different query this reconciliation does
+      not attempt against unstructured text. checks_performed IS projected
+      (always exactly the one operation checked) since that is the real
+      output of the check that did run.
+    scope:
+      - EvaluatePolicy
+      - BatchEvaluatePolicy
+    functions:
+      - agc_evaluate_policy
+      - agc_batch_evaluate_policy
+    dropped_fields:
+      PolicyDecisionDetails: [allowed_operations]
+    gateway_mapping: "left empty"
+    rfc: null
