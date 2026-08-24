@@ -27,6 +27,8 @@
 
 #include "agc_abi.h"
 #include "agc_types.h"
+#include "agc_scope.h"
+#include "agc_params.h"
 #include "agc_core.h"
 
 #endif /* AGILECRYPTO_H */
