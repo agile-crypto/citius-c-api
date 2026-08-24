@@ -1,0 +1,632 @@
+{
+  "crypto_error_code": {
+    "CRYPTO_ERROR_AUTHENTICATION_FAILED": 42,
+    "CRYPTO_ERROR_CONCURRENT_ACCESS": 71,
+    "CRYPTO_ERROR_INCOMPATIBLE_PARAMETERS": 44,
+    "CRYPTO_ERROR_INSUFFICIENT_ENTROPY": 62,
+    "CRYPTO_ERROR_INVALID_KEY_MATERIAL": 60,
+    "CRYPTO_ERROR_INVALID_OPERATION_STATE": 40,
+    "CRYPTO_ERROR_KEY_EXPIRED": 2,
+    "CRYPTO_ERROR_KEY_NOT_EXPORTABLE": 4,
+    "CRYPTO_ERROR_KEY_NOT_EXTRACTABLE": 51,
+    "CRYPTO_ERROR_KEY_NOT_FOUND": 1,
+    "CRYPTO_ERROR_KEY_OPERATION_NOT_ALLOWED": 5,
+    "CRYPTO_ERROR_KEY_SIZE_MISMATCH": 61,
+    "CRYPTO_ERROR_KEY_VERSION_MISMATCH": 3,
+    "CRYPTO_ERROR_MIGRATION_NOT_FEASIBLE": 50,
+    "CRYPTO_ERROR_NO_MATCHING_PROVIDER": 23,
+    "CRYPTO_ERROR_NO_MATCHING_TEMPLATE": 13,
+    "CRYPTO_ERROR_OPERATION_EXPIRED": 41,
+    "CRYPTO_ERROR_POLICY_NOT_FOUND": 30,
+    "CRYPTO_ERROR_POLICY_VIOLATION": 31,
+    "CRYPTO_ERROR_PROVIDER_INCOMPATIBLE": 22,
+    "CRYPTO_ERROR_PROVIDER_NOT_FOUND": 20,
+    "CRYPTO_ERROR_PROVIDER_UNAVAILABLE": 21,
+    "CRYPTO_ERROR_RATE_LIMITED": 70,
+    "CRYPTO_ERROR_SIGNATURE_INVALID": 43,
+    "CRYPTO_ERROR_TEMPLATE_DEPRECATED": 11,
+    "CRYPTO_ERROR_TEMPLATE_FORBIDDEN": 12,
+    "CRYPTO_ERROR_TEMPLATE_NOT_FOUND": 10,
+    "CRYPTO_ERROR_UNSPECIFIED": 0
+  },
+  "crypto_error_code_count": 28,
+  "descriptor_sha256": "36480188a689a306992477334e6494efd7242b390efdab70a2c6156d9b309133",
+  "enum_count": 41,
+  "enums": {
+    "AeadScope": {
+      "c_type": "agc_aead_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "AEAD_SCOPE_DETERMINISTIC": 2,
+        "AEAD_SCOPE_STANDARD": 1,
+        "AEAD_SCOPE_STREAMING": 3,
+        "AEAD_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "Argon2Variant": {
+      "c_type": "agc_argon2_variant",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ARGON2_VARIANT_D": 1,
+        "ARGON2_VARIANT_I": 2,
+        "ARGON2_VARIANT_ID": 3,
+        "ARGON2_VARIANT_UNSPECIFIED": 0
+      }
+    },
+    "AsymmetricEncryptionScope": {
+      "c_type": "agc_asymmetric_encryption_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "ASYMMETRIC_ENCRYPTION_SCOPE_RAW": 2,
+        "ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD": 1,
+        "ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "CombinerStrategy": {
+      "c_type": "agc_combiner_strategy",
+      "file": "api/types/templates.proto",
+      "values": {
+        "COMBINER_CONCATENATION": 1,
+        "COMBINER_KDF_COMBINATION": 3,
+        "COMBINER_NESTING": 2,
+        "COMBINER_UNSPECIFIED": 0
+      }
+    },
+    "CryptoOperation": {
+      "c_type": "agc_crypto_operation",
+      "file": "api/types/common.proto",
+      "values": {
+        "CRYPTO_OPERATION_CREATE_KEY": 1,
+        "CRYPTO_OPERATION_DECAPSULATE": 71,
+        "CRYPTO_OPERATION_DECRYPT": 11,
+        "CRYPTO_OPERATION_DECRYPT_DIGEST": 101,
+        "CRYPTO_OPERATION_DECRYPT_VERIFY": 103,
+        "CRYPTO_OPERATION_DELETE_KEY": 3,
+        "CRYPTO_OPERATION_DERIVE_KEY": 40,
+        "CRYPTO_OPERATION_DIGEST": 60,
+        "CRYPTO_OPERATION_DIGEST_ENCRYPT": 100,
+        "CRYPTO_OPERATION_DIGEST_SIGN": 22,
+        "CRYPTO_OPERATION_DIGEST_VERIFY": 23,
+        "CRYPTO_OPERATION_ENCAPSULATE": 70,
+        "CRYPTO_OPERATION_ENCRYPT": 10,
+        "CRYPTO_OPERATION_EXPORT_KEY": 7,
+        "CRYPTO_OPERATION_GENERATE_MAC": 50,
+        "CRYPTO_OPERATION_GENERATE_RANDOM": 90,
+        "CRYPTO_OPERATION_IMPORT_KEY": 6,
+        "CRYPTO_OPERATION_KEY_AGREEMENT": 80,
+        "CRYPTO_OPERATION_MIGRATE_KEY": 9,
+        "CRYPTO_OPERATION_READ_KEY": 2,
+        "CRYPTO_OPERATION_ROTATE_KEY": 4,
+        "CRYPTO_OPERATION_SEED_RANDOM": 91,
+        "CRYPTO_OPERATION_SIGN": 20,
+        "CRYPTO_OPERATION_SIGN_ENCRYPT": 102,
+        "CRYPTO_OPERATION_TRANSFORM_KEY": 5,
+        "CRYPTO_OPERATION_UNSPECIFIED": 0,
+        "CRYPTO_OPERATION_UNWRAP_KEY": 31,
+        "CRYPTO_OPERATION_UPDATE_KEY_POLICY": 8,
+        "CRYPTO_OPERATION_VERIFY": 21,
+        "CRYPTO_OPERATION_VERIFY_MAC": 51,
+        "CRYPTO_OPERATION_WRAP_KEY": 30
+      }
+    },
+    "CryptoPrimitive": {
+      "c_type": "agc_crypto_primitive",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "CRYPTO_PRIMITIVE_AE": 1,
+        "CRYPTO_PRIMITIVE_BLOCK_CIPHER": 2,
+        "CRYPTO_PRIMITIVE_COMBINER": 51,
+        "CRYPTO_PRIMITIVE_DRBG": 50,
+        "CRYPTO_PRIMITIVE_HASH": 30,
+        "CRYPTO_PRIMITIVE_KDF": 40,
+        "CRYPTO_PRIMITIVE_KEM": 20,
+        "CRYPTO_PRIMITIVE_KEY_AGREE": 21,
+        "CRYPTO_PRIMITIVE_KEY_WRAP": 41,
+        "CRYPTO_PRIMITIVE_MAC": 31,
+        "CRYPTO_PRIMITIVE_OTHER": 99,
+        "CRYPTO_PRIMITIVE_OTP": 45,
+        "CRYPTO_PRIMITIVE_PKE": 4,
+        "CRYPTO_PRIMITIVE_SIGNATURE": 10,
+        "CRYPTO_PRIMITIVE_STREAM_CIPHER": 3,
+        "CRYPTO_PRIMITIVE_UNSPECIFIED": 0,
+        "CRYPTO_PRIMITIVE_XOF": 32
+      }
+    },
+    "DiskEncryptionScope": {
+      "c_type": "agc_disk_encryption_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "DISK_ENCRYPTION_SCOPE_STANDARD": 1,
+        "DISK_ENCRYPTION_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "EcdhKdfType": {
+      "c_type": "agc_ecdh_kdf_type",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ECDH_KDF_HKDF_SHA256": 1,
+        "ECDH_KDF_HKDF_SHA384": 2,
+        "ECDH_KDF_HKDF_SHA512": 3,
+        "ECDH_KDF_UNSPECIFIED": 0,
+        "ECDH_KDF_X963_SHA256": 4,
+        "ECDH_KDF_X963_SHA384": 5,
+        "ECDH_KDF_X963_SHA512": 6
+      }
+    },
+    "Ed25519Variant": {
+      "c_type": "agc_ed25519_variant",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ED25519_VARIANT_CTX": 2,
+        "ED25519_VARIANT_PH": 3,
+        "ED25519_VARIANT_PURE": 1,
+        "ED25519_VARIANT_UNSPECIFIED": 0
+      }
+    },
+    "Ed448Variant": {
+      "c_type": "agc_ed448_variant",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ED448_VARIANT_PH": 2,
+        "ED448_VARIANT_PURE": 1,
+        "ED448_VARIANT_UNSPECIFIED": 0
+      }
+    },
+    "EllipticCurve": {
+      "c_type": "agc_elliptic_curve",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ELLIPTIC_CURVE_B163": 41,
+        "ELLIPTIC_CURVE_B233": 43,
+        "ELLIPTIC_CURVE_B283": 45,
+        "ELLIPTIC_CURVE_B409": 47,
+        "ELLIPTIC_CURVE_B571": 49,
+        "ELLIPTIC_CURVE_BRAINPOOL_P256R1": 30,
+        "ELLIPTIC_CURVE_BRAINPOOL_P256T1": 33,
+        "ELLIPTIC_CURVE_BRAINPOOL_P384R1": 31,
+        "ELLIPTIC_CURVE_BRAINPOOL_P384T1": 34,
+        "ELLIPTIC_CURVE_BRAINPOOL_P512R1": 32,
+        "ELLIPTIC_CURVE_BRAINPOOL_P512T1": 35,
+        "ELLIPTIC_CURVE_CURVE25519": 10,
+        "ELLIPTIC_CURVE_CURVE448": 11,
+        "ELLIPTIC_CURVE_K163": 40,
+        "ELLIPTIC_CURVE_K233": 42,
+        "ELLIPTIC_CURVE_K283": 44,
+        "ELLIPTIC_CURVE_K409": 46,
+        "ELLIPTIC_CURVE_K571": 48,
+        "ELLIPTIC_CURVE_P256": 1,
+        "ELLIPTIC_CURVE_P384": 2,
+        "ELLIPTIC_CURVE_P521": 3,
+        "ELLIPTIC_CURVE_SECP256K1": 20,
+        "ELLIPTIC_CURVE_UNSPECIFIED": 0
+      }
+    },
+    "Fips140Level": {
+      "c_type": "agc_fips140_level",
+      "file": "api/types/implementation.proto",
+      "values": {
+        "FIPS_140_LEVEL_1": 1,
+        "FIPS_140_LEVEL_2": 2,
+        "FIPS_140_LEVEL_3": 3,
+        "FIPS_140_LEVEL_4": 4,
+        "FIPS_140_LEVEL_UNSPECIFIED": 0
+      }
+    },
+    "GenericSecretScope": {
+      "c_type": "agc_generic_secret_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "GENERIC_SECRET_SCOPE_STANDARD": 1,
+        "GENERIC_SECRET_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "HashAlgorithm": {
+      "c_type": "agc_hash_algorithm",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "HASH_ALGORITHM_BLAKE2B_256": 30,
+        "HASH_ALGORITHM_BLAKE2B_384": 31,
+        "HASH_ALGORITHM_BLAKE2B_512": 32,
+        "HASH_ALGORITHM_BLAKE2S_160": 34,
+        "HASH_ALGORITHM_BLAKE2S_224": 35,
+        "HASH_ALGORITHM_BLAKE2S_256": 33,
+        "HASH_ALGORITHM_BLAKE3": 40,
+        "HASH_ALGORITHM_GOST_R3411_2012_256": 51,
+        "HASH_ALGORITHM_GOST_R3411_2012_512": 52,
+        "HASH_ALGORITHM_GOST_R3411_94": 50,
+        "HASH_ALGORITHM_MD5": 101,
+        "HASH_ALGORITHM_OTHER": 200,
+        "HASH_ALGORITHM_SHA1": 100,
+        "HASH_ALGORITHM_SHA224": 5,
+        "HASH_ALGORITHM_SHA256": 1,
+        "HASH_ALGORITHM_SHA384": 2,
+        "HASH_ALGORITHM_SHA3_224": 13,
+        "HASH_ALGORITHM_SHA3_256": 10,
+        "HASH_ALGORITHM_SHA3_384": 11,
+        "HASH_ALGORITHM_SHA3_512": 12,
+        "HASH_ALGORITHM_SHA512": 3,
+        "HASH_ALGORITHM_SHA512_224": 6,
+        "HASH_ALGORITHM_SHA512_256": 4,
+        "HASH_ALGORITHM_SHAKE128": 20,
+        "HASH_ALGORITHM_SHAKE256": 21,
+        "HASH_ALGORITHM_UNSPECIFIED": 0
+      }
+    },
+    "HashScope": {
+      "c_type": "agc_hash_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "HASH_SCOPE_STANDARD": 1,
+        "HASH_SCOPE_UNSPECIFIED": 0,
+        "HASH_SCOPE_XOF": 2
+      }
+    },
+    "HkdfSaltType": {
+      "c_type": "agc_hkdf_salt_type",
+      "file": "api/types/operation_params.proto",
+      "values": {
+        "HKDF_SALT_TYPE_DATA": 1,
+        "HKDF_SALT_TYPE_KEY": 3,
+        "HKDF_SALT_TYPE_NULL": 2,
+        "HKDF_SALT_TYPE_UNSPECIFIED": 0
+      }
+    },
+    "KdfScope": {
+      "c_type": "agc_kdf_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "KDF_SCOPE_AGREEMENT": 3,
+        "KDF_SCOPE_COUNTER": 4,
+        "KDF_SCOPE_EXTRACT_EXPAND": 1,
+        "KDF_SCOPE_GOST": 6,
+        "KDF_SCOPE_PASSWORD": 2,
+        "KDF_SCOPE_TLS": 5,
+        "KDF_SCOPE_UNSPECIFIED": 0,
+        "KDF_SCOPE_VENDOR": 7
+      }
+    },
+    "KemScope": {
+      "c_type": "agc_kem_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "KEM_SCOPE_HYBRID": 2,
+        "KEM_SCOPE_STANDARD": 1,
+        "KEM_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "KeyAgreementScope": {
+      "c_type": "agc_key_agreement_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "KEY_AGREEMENT_SCOPE_HYBRID": 2,
+        "KEY_AGREEMENT_SCOPE_STANDARD": 1,
+        "KEY_AGREEMENT_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "KeyFormat": {
+      "c_type": "agc_key_format",
+      "file": "api/types/common.proto",
+      "values": {
+        "KEY_FORMAT_JWK": 5,
+        "KEY_FORMAT_PEM": 6,
+        "KEY_FORMAT_PKCS8": 3,
+        "KEY_FORMAT_RAW": 1,
+        "KEY_FORMAT_SEC1": 7,
+        "KEY_FORMAT_SPKI": 4,
+        "KEY_FORMAT_UNSPECIFIED": 0,
+        "KEY_FORMAT_WRAPPED": 2
+      }
+    },
+    "KeyLifecycleState": {
+      "c_type": "agc_key_lifecycle_state",
+      "file": "api/types/common.proto",
+      "values": {
+        "KEY_LIFECYCLE_STATE_ACTIVE": 2,
+        "KEY_LIFECYCLE_STATE_COMPROMISED": 5,
+        "KEY_LIFECYCLE_STATE_DEACTIVATED": 4,
+        "KEY_LIFECYCLE_STATE_DESTROYED": 6,
+        "KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED": 7,
+        "KEY_LIFECYCLE_STATE_PRE_ACTIVE": 1,
+        "KEY_LIFECYCLE_STATE_SUSPENDED": 3,
+        "KEY_LIFECYCLE_STATE_UNSPECIFIED": 0
+      }
+    },
+    "KeyType": {
+      "c_type": "agc_key_type",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "KEY_TYPE_CUSTOM": 199,
+        "KEY_TYPE_DH": 17,
+        "KEY_TYPE_DSA": 16,
+        "KEY_TYPE_EC": 11,
+        "KEY_TYPE_ED25519": 12,
+        "KEY_TYPE_ED448": 13,
+        "KEY_TYPE_GOST": 40,
+        "KEY_TYPE_HYBRID": 30,
+        "KEY_TYPE_ML_DSA": 21,
+        "KEY_TYPE_ML_KEM": 20,
+        "KEY_TYPE_OTP": 50,
+        "KEY_TYPE_PQ_EXPERIMENTAL": 101,
+        "KEY_TYPE_RSA": 10,
+        "KEY_TYPE_SLH_DSA": 22,
+        "KEY_TYPE_SYMMETRIC": 1,
+        "KEY_TYPE_UNSPECIFIED": 0,
+        "KEY_TYPE_VENDOR": 100,
+        "KEY_TYPE_X25519": 14,
+        "KEY_TYPE_X448": 15
+      }
+    },
+    "KeyWrappingScope": {
+      "c_type": "agc_key_wrapping_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "KEY_WRAPPING_SCOPE_STANDARD": 1,
+        "KEY_WRAPPING_SCOPE_UNSPECIFIED": 0,
+        "KEY_WRAPPING_SCOPE_WITH_PADDING": 2
+      }
+    },
+    "MacScope": {
+      "c_type": "agc_mac_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "MAC_SCOPE_STANDARD": 1,
+        "MAC_SCOPE_STREAMING": 2,
+        "MAC_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "MaskGenerationFunction": {
+      "c_type": "agc_mask_generation_function",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "MGF_MGF1": 1,
+        "MGF_UNSPECIFIED": 0
+      }
+    },
+    "MigrationStrategy": {
+      "c_type": "agc_migration_strategy",
+      "file": "api/messages/key_management.proto",
+      "values": {
+        "MIGRATION_STRATEGY_EXTRACT_AND_IMPORT": 2,
+        "MIGRATION_STRATEGY_PROVIDER_SWITCH": 1,
+        "MIGRATION_STRATEGY_REKEY_AND_ARCHIVE": 4,
+        "MIGRATION_STRATEGY_REKEY_AND_DESTROY": 5,
+        "MIGRATION_STRATEGY_UNSPECIFIED": 0,
+        "MIGRATION_STRATEGY_WRAPPED_TRANSFER": 3
+      }
+    },
+    "MlDsaParameterSet": {
+      "c_type": "agc_ml_dsa_parameter_set",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ML_DSA_44": 1,
+        "ML_DSA_65": 2,
+        "ML_DSA_87": 3,
+        "ML_DSA_PARAMETER_SET_UNSPECIFIED": 0
+      }
+    },
+    "MlKemParameterSet": {
+      "c_type": "agc_ml_kem_parameter_set",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "ML_KEM_1024": 3,
+        "ML_KEM_512": 1,
+        "ML_KEM_768": 2,
+        "ML_KEM_PARAMETER_SET_UNSPECIFIED": 0
+      }
+    },
+    "NistSecurityLevel": {
+      "c_type": "agc_nist_security_level",
+      "file": "api/types/common.proto",
+      "values": {
+        "NIST_SECURITY_LEVEL_1": 1,
+        "NIST_SECURITY_LEVEL_2": 2,
+        "NIST_SECURITY_LEVEL_3": 3,
+        "NIST_SECURITY_LEVEL_4": 4,
+        "NIST_SECURITY_LEVEL_5": 5,
+        "NIST_SECURITY_LEVEL_UNSPECIFIED": 0
+      }
+    },
+    "NistStatus": {
+      "c_type": "agc_nist_status",
+      "file": "api/types/common.proto",
+      "values": {
+        "NIST_STATUS_ACCEPTABLE": 3,
+        "NIST_STATUS_APPROVED": 1,
+        "NIST_STATUS_DEPRECATED": 4,
+        "NIST_STATUS_FORBIDDEN": 5,
+        "NIST_STATUS_RECOMMENDED": 2,
+        "NIST_STATUS_UNSPECIFIED": 0
+      }
+    },
+    "PaddingScheme": {
+      "c_type": "agc_padding_scheme",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "PADDING_SCHEME_ISO7816": 3,
+        "PADDING_SCHEME_NONE": 1,
+        "PADDING_SCHEME_PKCS7": 2,
+        "PADDING_SCHEME_UNSPECIFIED": 0,
+        "PADDING_SCHEME_X923": 4,
+        "PADDING_SCHEME_ZERO": 5
+      }
+    },
+    "PolicyDenialReason": {
+      "c_type": "agc_policy_denial_reason",
+      "file": "api/messages/policy.proto",
+      "values": {
+        "POLICY_DENIAL_REASON_ALGORITHM_DEPRECATED": 9,
+        "POLICY_DENIAL_REASON_KEY_NOT_FOUND": 6,
+        "POLICY_DENIAL_REASON_OPERATION_NOT_ALLOWED": 2,
+        "POLICY_DENIAL_REASON_POLICY_NOT_FOUND": 1,
+        "POLICY_DENIAL_REASON_PQC_REQUIRED": 10,
+        "POLICY_DENIAL_REASON_PROPERTY_MISMATCH": 7,
+        "POLICY_DENIAL_REASON_PROVIDER_NOT_ALLOWED": 5,
+        "POLICY_DENIAL_REASON_SCOPE_NOT_ALLOWED": 4,
+        "POLICY_DENIAL_REASON_SECURITY_LEVEL_INSUFFICIENT": 8,
+        "POLICY_DENIAL_REASON_TEMPLATE_NOT_ALLOWED": 3,
+        "POLICY_DENIAL_REASON_UNSPECIFIED": 0
+      }
+    },
+    "ProviderType": {
+      "c_type": "agc_provider_type",
+      "file": "api/types/providers.proto",
+      "values": {
+        "PROVIDER_TYPE_CLOUD_KMS": 3,
+        "PROVIDER_TYPE_HSM": 2,
+        "PROVIDER_TYPE_REMOTE": 4,
+        "PROVIDER_TYPE_SOFTWARE": 1,
+        "PROVIDER_TYPE_UNSPECIFIED": 0
+      }
+    },
+    "SignatureFormat": {
+      "c_type": "agc_signature_format",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "SIGNATURE_FORMAT_DER": 1,
+        "SIGNATURE_FORMAT_IEEE_P1363": 2,
+        "SIGNATURE_FORMAT_RAW": 3,
+        "SIGNATURE_FORMAT_UNSPECIFIED": 0
+      }
+    },
+    "SignatureScope": {
+      "c_type": "agc_signature_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "SIGNATURE_SCOPE_PREHASHED": 3,
+        "SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT": 4,
+        "SIGNATURE_SCOPE_STANDARD": 1,
+        "SIGNATURE_SCOPE_UNSPECIFIED": 0,
+        "SIGNATURE_SCOPE_WITH_CONTEXT": 2
+      }
+    },
+    "SlhDsaHashType": {
+      "c_type": "agc_slh_dsa_hash_type",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "SLH_DSA_HASH_TYPE_UNSPECIFIED": 0,
+        "SLH_DSA_SHA2": 1,
+        "SLH_DSA_SHAKE": 2
+      }
+    },
+    "SlhDsaParameterSet": {
+      "c_type": "agc_slh_dsa_parameter_set",
+      "file": "api/types/algorithm_params.proto",
+      "values": {
+        "SLH_DSA_128F": 2,
+        "SLH_DSA_128S": 1,
+        "SLH_DSA_192F": 4,
+        "SLH_DSA_192S": 3,
+        "SLH_DSA_256F": 6,
+        "SLH_DSA_256S": 5,
+        "SLH_DSA_PARAMETER_SET_UNSPECIFIED": 0
+      }
+    },
+    "Sp800108DataType": {
+      "c_type": "agc_sp800108_data_type",
+      "file": "api/types/operation_params.proto",
+      "values": {
+        "SP800_108_DATA_TYPE_BYTE_ARRAY": 4,
+        "SP800_108_DATA_TYPE_COUNTER": 2,
+        "SP800_108_DATA_TYPE_DKM_LENGTH": 3,
+        "SP800_108_DATA_TYPE_ITERATION_VARIABLE": 1,
+        "SP800_108_DATA_TYPE_UNSPECIFIED": 0
+      }
+    },
+    "SymmetricCipherScope": {
+      "c_type": "agc_symmetric_cipher_scope",
+      "file": "api/types/common.proto",
+      "values": {
+        "SYMMETRIC_CIPHER_SCOPE_BLOCK": 1,
+        "SYMMETRIC_CIPHER_SCOPE_STREAM": 2,
+        "SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED": 0
+      }
+    },
+    "TemplateStatus": {
+      "c_type": "agc_template_status",
+      "file": "api/types/templates.proto",
+      "values": {
+        "TEMPLATE_STATUS_ACCEPTABLE": 2,
+        "TEMPLATE_STATUS_ACTIVE": 1,
+        "TEMPLATE_STATUS_DEPRECATED": 3,
+        "TEMPLATE_STATUS_EXPERIMENTAL": 5,
+        "TEMPLATE_STATUS_FORBIDDEN": 4,
+        "TEMPLATE_STATUS_UNSPECIFIED": 0
+      }
+    },
+    "WrapFormat": {
+      "c_type": "agc_wrap_format",
+      "file": "api/types/common.proto",
+      "values": {
+        "WRAP_FORMAT_PKCS1": 2,
+        "WRAP_FORMAT_PKCS8": 1,
+        "WRAP_FORMAT_RAW": 3,
+        "WRAP_FORMAT_SEC1": 5,
+        "WRAP_FORMAT_SPKI": 4,
+        "WRAP_FORMAT_UNSPECIFIED": 0
+      }
+    }
+  },
+  "local_error_code_count": 15,
+  "local_error_codes": [
+    {
+      "name": "UNSPECIFIED",
+      "value": -1
+    },
+    {
+      "name": "INVALID_ARGUMENT",
+      "value": -2
+    },
+    {
+      "name": "BUFFER_TOO_SMALL",
+      "value": -3
+    },
+    {
+      "name": "OUT_OF_MEMORY",
+      "value": -4
+    },
+    {
+      "name": "NOT_IMPLEMENTED",
+      "value": -5
+    },
+    {
+      "name": "INVALID_HANDLE",
+      "value": -6
+    },
+    {
+      "name": "ABI_MISMATCH",
+      "value": -7
+    },
+    {
+      "name": "UNAVAILABLE",
+      "value": -8
+    },
+    {
+      "name": "PERMISSION_DENIED",
+      "value": -9
+    },
+    {
+      "name": "ALREADY_EXISTS",
+      "value": -10
+    },
+    {
+      "name": "CANCELLED",
+      "value": -11
+    },
+    {
+      "name": "DEADLINE_EXCEEDED",
+      "value": -12
+    },
+    {
+      "name": "INTERNAL",
+      "value": -13
+    },
+    {
+      "name": "PROVIDER_CONTRACT_VIOLATION",
+      "value": -14
+    },
+    {
+      "name": "ITERATOR_EXHAUSTED",
+      "value": -15
+    }
+  ]
+}

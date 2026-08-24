@@ -25,6 +25,7 @@ include(GNUInstallDirs)
 # ----------------------------------------------------------------------------
 add_library(agilecrypto SHARED
     src/core/version.c
+    src/core/agc_types.c
 )
 
 target_include_directories(agilecrypto

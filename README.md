@@ -36,6 +36,24 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
+`ctest` includes the Tier 1 conformance checks (`conformance/tier1_*.py`),
+which run against the pinned proto descriptor on every build — no separate
+step to remember. They need `python3 -m pip install protobuf`.
+
+## Regenerating the vocabulary
+
+`include/agc/agc_types.h` and `src/core/agc_types.c` are generated:
+
+```sh
+python3 tools/gen_agc_types.py
+```
+
+They are a deterministic function of `conformance/api_descriptor.binpb` (the
+pinned proto snapshot — see `conformance/DESCRIPTOR_PROVENANCE.md`) plus the
+small hand-maintained `LOCAL_ERROR_CODES` table inside the generator itself.
+**Never hand-edit `agc_types.h`/`.c` directly** — that is exactly the failure
+mode `C_API_COMPARISON.md` finding B1 documents in the earlier draft.
+
 ## What this is not (yet)
 
 The stub backend proves the API's shapes, ownership rules, and round-trips
