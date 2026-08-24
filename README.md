@@ -1,53 +1,45 @@
-# Citius C API
+# agilecrypto — C binding for the Citius intent-based cryptographic API
 
-A pure-C (C11) cryptographic API that mirrors the [Citius ProtoBuf API](../api/proto/) as
-closely as the C type system allows, while drawing session and handle semantics from
-PKCS#11.
+A local, in-process C library that mirrors `caas.crypto.v1` (the protobuf/gRPC
+specification in `github.com/agile-crypto/api`) closely enough to be checked
+against it mechanically, while behaving like a proper C library rather than a
+transliterated wire format.
 
-## Design Principles
+**Status:** under active reconciliation. See
+[`RECONCILIATION_PLAN.md`](RECONCILIATION_PLAN.md) for the full plan and its
+commit-by-commit sequencing, [`C_API_COMPARISON.md`](C_API_COMPARISON.md) for
+the audit of the two earlier drafts this tree reconciles, and
+[`STRENGTHS_AND_WEAKNESSES.md`](STRENGTHS_AND_WEAKNESSES.md) for a plain-language
+summary of that audit.
 
-- **Structural parity**: every proto message → C `struct`; every `oneof` → tagged union.
-- **Scope-driven algorithm selection**: callers pass a `citius_scope_spec_t` expressing
-  intent; the provider/policy engine selects the concrete algorithm at runtime.
-- **PKCS#11-style sessions**: `citius_session_open()` / `citius_session_close()`; all
-  operations carry a `CITIUS_SESSION_HANDLE`.
-- **Single return type**: every function returns `CITIUS_RV` (`uint32_t`); `CITIUS_OK = 0`.
-- **Buffer size-query pattern**: pass `NULL` (or `capacity = 0`) for an output buffer to
-  receive the required size without performing the operation.
-
-## Header Layout
+## Layout
 
 ```
-include/citius/
-├── citius_types.h           # Handles, CITIUS_RV, error codes, byte buffers
-├── citius_algorithm_params.h# Algorithm enums + 30+ param structs + tagged union
-├── citius_scope.h           # 12 scope enums, scope_spec_t, security properties
-├── citius_operation_params.h# Per-call params (AAD, KDF salts, domain context)
-├── citius_provider.h        # Session API, provider vtable, provider info
-├── citius_key_management.h  # 11 key lifecycle functions
-├── citius_crypto.h          # 18 single-shot operations
-├── citius_streaming.h       # Init/Update/Final streaming + opaque ctx
-├── citius_policy.h          # Template discovery + policy CRUD/eval
-└── citius.h                 # Aggregate top-level include
+include/agc/     public headers — one per proto service, plus core/types
+src/core/        ctx, error handling, memory hygiene, iterators, sessions
+src/wire/        hand-written OperationMetadata protobuf codec
+src/store/       in-memory key/template/policy/provider stores (stub backend)
+src/services/    the 90 RPCs, implemented against the stub backend
+src/stub/        deterministic (NOT cryptographically secure) stub primitives
+tools/           the enum/error-code generator, driven by the pinned proto
+conformance/     DIVERGENCES.yaml + the Tier 1 vocabulary/surface/field checks
+tests/           CTest suite
+examples/        example programs
+docs/            C_API_MAPPING.md (design rationale) and PROTO_RFCS.md
 ```
 
-## Prerequisites
-
-- CMake ≥ 3.25
-- A C11-capable compiler (GCC ≥ 7, Clang ≥ 5, Apple Clang ≥ 11)
-
-## Build & Test
+## Build
 
 ```sh
-cmake -S citius-c-api -B build
+cmake -S . -B build
 cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-All tests use the zero-filling stub provider; no external crypto library is required.
+## What this is not (yet)
 
-## Project Status
-
-This repository contains the public header specification and a CMake/CTest test harness
-that validates the API contract. A real provider implementation backed by a crypto library
-is out of scope for this scaffold.
+The stub backend proves the API's shapes, ownership rules, and round-trips
+structurally; it does **not** perform real cryptography (see
+`src/stub/README.md` once commit 8 lands). Wiring a real provider (OpenSSL,
+PKCS#11) is out of scope for the reconciliation itself — see
+`RECONCILIATION_PLAN.md` §5's provider SPI item.

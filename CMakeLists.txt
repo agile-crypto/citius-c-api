@@ -1,78 +1,80 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.20)
+project(agilecrypto
+    VERSION 1.0.0
+    DESCRIPTION "Abstract Cryptographic API — C binding"
+    LANGUAGES C)
 
-project(citius_c_api
-    VERSION 0.1.0
-    DESCRIPTION "Pure-C cryptographic API mirroring the Citius ProtoBuf API"
-    LANGUAGES C
-)
-
-# ---------------------------------------------------------------------------
-# Language standard
-# ---------------------------------------------------------------------------
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-# ---------------------------------------------------------------------------
-# Build options
-# ---------------------------------------------------------------------------
-option(CITIUS_BUILD_EXAMPLES "Build example programs"  OFF)
-option(CITIUS_INSTALL_PKGCONFIG "Install pkg-config file" ON)
-
-# ---------------------------------------------------------------------------
-# Compiler warnings
-# ---------------------------------------------------------------------------
-if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
-    add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "Debug" CACHE STRING "" FORCE)
 endif()
 
-# ---------------------------------------------------------------------------
-# Public include directory
-# ---------------------------------------------------------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+option(AGC_BUILD_TESTS "Build the CTest suite" ON)
+option(AGC_BUILD_EXAMPLES "Build the example programs" ON)
+option(AGC_ENABLE_PROPOSED_EXTENSIONS "Build agc_ext.h — RPCs not yet in the proto (see docs/PROTO_RFCS.md)" OFF)
 
-# ---------------------------------------------------------------------------
-# Stub provider library
-# ---------------------------------------------------------------------------
-add_subdirectory(src/stub)
+include(GNUInstallDirs)
 
-# ---------------------------------------------------------------------------
-# Examples (opt-in)
-# ---------------------------------------------------------------------------
-if(CITIUS_BUILD_EXAMPLES)
-    add_subdirectory(examples)
+# ----------------------------------------------------------------------------
+# Core library. Sources are appended to by each reconciliation commit rather
+# than globbed, so a file that fails to compile fails the specific commit that
+# introduced it rather than silently vanishing from the build.
+# ----------------------------------------------------------------------------
+add_library(agilecrypto SHARED
+    src/core/version.c
+)
+
+target_include_directories(agilecrypto
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/agc>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/agc>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+set_target_properties(agilecrypto PROPERTIES
+    C_VISIBILITY_PRESET hidden
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
+)
+
+target_compile_options(agilecrypto PRIVATE
+    -Wall -Wextra -Wpedantic
+    $<$<CONFIG:Debug>:-g -O0>
+)
+
+if(AGC_ENABLE_PROPOSED_EXTENSIONS)
+    target_compile_definitions(agilecrypto PUBLIC AGC_ENABLE_PROPOSED_EXTENSIONS=1)
 endif()
 
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
-include(CTest)
-if(BUILD_TESTING)
+find_package(Threads REQUIRED)
+target_link_libraries(agilecrypto PRIVATE Threads::Threads)
+
+# ----------------------------------------------------------------------------
+# pkg-config
+# ----------------------------------------------------------------------------
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/agilecrypto.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/agilecrypto.pc
+    @ONLY
+)
+
+install(TARGETS agilecrypto
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+install(DIRECTORY include/agc/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/agc FILES_MATCHING PATTERN "*.h")
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/agilecrypto.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+
+# ----------------------------------------------------------------------------
+if(AGC_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 
-# ---------------------------------------------------------------------------
-# pkg-config file
-# ---------------------------------------------------------------------------
-if(CITIUS_INSTALL_PKGCONFIG)
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/citius.pc.in
-        ${CMAKE_CURRENT_BINARY_DIR}/citius.pc
-        @ONLY
-    )
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/citius.pc
-        DESTINATION lib/pkgconfig
-    )
+if(AGC_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()
-
-# ---------------------------------------------------------------------------
-# Install rules
-# ---------------------------------------------------------------------------
-install(DIRECTORY include/citius
-    DESTINATION include
-)
-
-install(TARGETS citius_stub_provider
-    ARCHIVE DESTINATION lib
-    LIBRARY DESTINATION lib
-)

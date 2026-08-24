@@ -1,77 +1,54 @@
-/**
- * @file test_helpers.h
- * @brief Shared test helpers for the Citius C API test suite.
+/* SPDX-License-Identifier: Apache-2.0
+ *
+ * Minimal assertion helpers shared by the CTest binaries. Deliberately not a
+ * framework: each test is a plain `main()` that exits non-zero on failure,
+ * which is all CTest needs.
  */
+#ifndef AGC_TEST_HELPERS_H
+#define AGC_TEST_HELPERS_H
 
-#ifndef TEST_HELPERS_H
-#define TEST_HELPERS_H
-
-#include "citius/citius.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* -------------------------------------------------------------------------
- * CITIUS_ASSERT — abort the test with a descriptive message on failure.
- * ------------------------------------------------------------------------- */
+#define AGC_ASSERT(cond) do { \
+    if (!(cond)) { \
+        fprintf(stderr, "ASSERT FAILED %s:%d: %s\n", __FILE__, __LINE__, #cond); \
+        exit(1); \
+    } \
+} while (0)
 
-#define CITIUS_ASSERT(expr) \
-    do { \
-        if (!(expr)) { \
-            fprintf(stderr, "ASSERTION FAILED: %s\n  at %s:%d\n", \
-                    #expr, __FILE__, __LINE__); \
-            exit(1); \
-        } \
-    } while (0)
+#define AGC_ASSERT_OK(rc) do { \
+    int _rc = (int)(rc); \
+    if (_rc != 0) { \
+        fprintf(stderr, "ASSERT_OK FAILED %s:%d: rc=%d\n", __FILE__, __LINE__, _rc); \
+        exit(1); \
+    } \
+} while (0)
 
-#define CITIUS_ASSERT_RV(rv, expected) \
-    do { \
-        CITIUS_RV _rv = (rv); \
-        CITIUS_RV _ex = (expected); \
-        if (_rv != _ex) { \
-            fprintf(stderr, "RV MISMATCH: got %s (%u), expected %s (%u)\n  at %s:%d\n", \
-                    citius_rv_to_string(_rv), _rv, \
-                    citius_rv_to_string(_ex), _ex, \
-                    __FILE__, __LINE__); \
-            exit(1); \
-        } \
-    } while (0)
+#define AGC_ASSERT_EQ_INT(a, b) do { \
+    long long _a = (long long)(a), _b = (long long)(b); \
+    if (_a != _b) { \
+        fprintf(stderr, "ASSERT_EQ FAILED %s:%d: %lld != %lld\n", __FILE__, __LINE__, _a, _b); \
+        exit(1); \
+    } \
+} while (0)
 
-/* -------------------------------------------------------------------------
- * Library init / cleanup helpers.
- * ------------------------------------------------------------------------- */
+#define AGC_ASSERT_EQ_STR(a, b) do { \
+    const char *_a = (a), *_b = (b); \
+    if (strcmp(_a, _b) != 0) { \
+        fprintf(stderr, "ASSERT_EQ_STR FAILED %s:%d: \"%s\" != \"%s\"\n", __FILE__, __LINE__, _a, _b); \
+        exit(1); \
+    } \
+} while (0)
 
-static inline void citius_test_init(void)
-{
-    CITIUS_RV rv = citius_init();
-    CITIUS_ASSERT_RV(rv, CITIUS_OK);
-}
+#define AGC_ASSERT_MEM_EQ(a, b, n) do { \
+    if (memcmp((a), (b), (n)) != 0) { \
+        fprintf(stderr, "ASSERT_MEM_EQ FAILED %s:%d\n", __FILE__, __LINE__); \
+        exit(1); \
+    } \
+} while (0)
 
-static inline void citius_test_cleanup(void)
-{
-    citius_finalize();
-}
+#define AGC_PASS(name) do { printf("%s: PASSED\n", (name)); return 0; } while (0)
 
-/* -------------------------------------------------------------------------
- * Convenience: create a key and assert success.
- * ------------------------------------------------------------------------- */
-
-static inline const char *citius_test_create_key(const char *name)
-{
-    citius_create_key_request_t request;
-    memset(&request, 0, sizeof(request));
-    request.name                          = name;
-    request.policy                        = "default-policy";
-    request.scope_spec.type               = CITIUS_SCOPE_SPEC_AEAD;
-    request.scope_spec.spec.aead.scope    = AEAD_SCOPE_STANDARD;
-    request.scope_spec.spec.aead.security.security_strength_bits = 256;
-
-    citius_create_key_response_t response;
-    memset(&response, 0, sizeof(response));
-    CITIUS_RV rv = citius_key_create(&request, &response);
-    CITIUS_ASSERT_RV(rv, CITIUS_OK);
-    CITIUS_ASSERT(response.key_metadata.key_id != NULL);
-    return response.key_metadata.key_id;
-}
-
-#endif /* TEST_HELPERS_H */
+#endif /* AGC_TEST_HELPERS_H */
