@@ -62,6 +62,16 @@ extern "C" {
 #define AGC_INIT(p) \
     do { memset((p), 0, sizeof(*(p))); (p)->struct_size = sizeof(*(p)); } while (0)
 
+/* True if `field` lies entirely within the first `(p)->struct_size` bytes of
+ * *p. The library uses this before writing any field of a versioned OUTPUT
+ * struct, so a caller compiled against an older (smaller) header never has a
+ * value written past the tail of the struct they actually allocated -- the
+ * other half of the AGC_INIT contract (D7): an old caller gets defaults
+ * (here: simply un-written, still-zeroed-by-them fields) for a field a newer
+ * library knows about but the old header didn't declare. */
+#define AGC_FIELD_FITS(p, field) \
+    (offsetof(__typeof__(*(p)), field) + sizeof((p)->field) <= (p)->struct_size)
+
 /* --------------------------------------------------------------------------
  * Presence: three-valued booleans
  *
