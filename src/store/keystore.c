@@ -585,6 +585,32 @@ agc_rc agc__keystore_import(agc_ctx *ctx, const char *name, const char *policy,
     return *out_key ? AGC_OK : AGC_ERR_OUT_OF_MEMORY;
 }
 
+agc_rc agc__keystore_get_secret(agc_ctx *ctx, const char *name, uint32_t version,
+                                 uint8_t **out_secret, size_t *out_len, uint32_t *out_actual_version)
+{
+    struct agc_keystore *ks = keystore_for(ctx);
+    if (!ks) return AGC_ERR_OUT_OF_MEMORY;
+
+    pthread_mutex_lock(&ks->mutex);
+    stored_key_name *k = find_locked(ks, name);
+    if (!k) { pthread_mutex_unlock(&ks->mutex); return AGC_ERR_CRYPTO_KEY_NOT_FOUND; }
+    if (k->lifecycle_state == AGC_KEY_LIFECYCLE_STATE_DESTROYED ||
+        k->lifecycle_state == AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED) {
+        pthread_mutex_unlock(&ks->mutex);
+        return AGC_ERR_CRYPTO_KEY_OPERATION_NOT_ALLOWED;
+    }
+    key_version_entry *v = find_version_locked(k, version);
+    if (!v) { pthread_mutex_unlock(&ks->mutex); return AGC_ERR_CRYPTO_KEY_VERSION_MISMATCH; }
+
+    *out_secret = malloc(v->secret_len ? v->secret_len : 1);
+    if (!*out_secret) { pthread_mutex_unlock(&ks->mutex); return AGC_ERR_OUT_OF_MEMORY; }
+    memcpy(*out_secret, v->secret, v->secret_len);
+    *out_len = v->secret_len;
+    if (out_actual_version) *out_actual_version = v->version;
+    pthread_mutex_unlock(&ks->mutex);
+    return AGC_OK;
+}
+
 /* --------------------------------------------------------------------------
  * Public agc_key_info accessors
  * -------------------------------------------------------------------------- */

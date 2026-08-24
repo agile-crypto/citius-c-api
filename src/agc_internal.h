@@ -134,6 +134,16 @@ agc_rc agc__keystore_export(agc_ctx *ctx, const char *name, uint8_t **out_materi
 agc_rc agc__keystore_import(agc_ctx *ctx, const char *name, const char *policy,
                              agc_slice key_material, const char *template_id, agc_key_info **out_key);
 
+/* Returns an OWNED COPY of the named key's secret material (version 0 =
+ * latest), for a service implementation's immediate, transient use in a
+ * crypto operation (src/services/crypto.c, commit 8) -- never returned to
+ * an external caller directly. The caller of this function must
+ * agc_secure_zero() and free() the copy as soon as the operation completes.
+ * Fails with AGC_ERR_CRYPTO_KEY_OPERATION_NOT_ALLOWED if the key has been
+ * destroyed. */
+agc_rc agc__keystore_get_secret(agc_ctx *ctx, const char *name, uint32_t version,
+                                 uint8_t **out_secret, size_t *out_len, uint32_t *out_actual_version);
+
 /* --------------------------------------------------------------------------
  * Metadata construction. The public API never lets a caller assemble
  * OperationMetadata field-by-field (it is always "the core's copy of a
