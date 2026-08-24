@@ -98,6 +98,48 @@ void agc__stub_digest(const uint8_t *data, size_t data_len, uint8_t out[AGC_STUB
 /* XOF: same construction, caller-chosen output length. */
 void agc__stub_xof(const uint8_t *data, size_t data_len, uint8_t *out, size_t out_len);
 
+/* --------------------------------------------------------------------------
+ * Streaming support (StreamingCryptoService, commit 9)
+ *
+ * The keystream used by agc__stub_aead_encrypt/decrypt is a pure function of
+ * (key, nonce, absolute byte offset from the start of the message) -- see
+ * agc__stub_expand's per-byte counter construction. That means a session can
+ * emit real, correct ciphertext for each Update chunk as it arrives, simply
+ * by tracking a running offset, with no need to buffer plaintext across
+ * calls for the ENCRYPTION half. Only the authentication tag needs the
+ * complete message, so the session still buffers ciphertext bytes purely
+ * for the Final tag computation -- exactly mirroring the proto's own
+ * "plaintext released by Update/Next before Final is UNAUTHENTICATED" rule,
+ * which is what this two-part design naturally produces rather than
+ * something bolted on to match the spec after the fact.
+ * -------------------------------------------------------------------------- */
+
+/* Encrypts `len` bytes starting at absolute message offset `offset`,
+ * writing ciphertext to `out` (`in`/`out` may alias for in-place XOR). Does
+ * NOT touch the tag -- call agc__stub_tag_from_accum() once, at Final, over
+ * the full accumulated (nonce || aad || ciphertext). */
+void agc__stub_aead_encrypt_at(const uint8_t *key, size_t key_len,
+                                const uint8_t *nonce, size_t nonce_len,
+                                uint64_t offset,
+                                const uint8_t *in, size_t len, uint8_t *out);
+
+/* Same construction as agc__stub_aead_encrypt_at (XOR is its own inverse);
+ * named separately so call sites read correctly. */
+void agc__stub_aead_decrypt_at(const uint8_t *key, size_t key_len,
+                                const uint8_t *nonce, size_t nonce_len,
+                                uint64_t offset,
+                                const uint8_t *in, size_t len, uint8_t *out);
+
+/* tag = expand(key, nonce || aad || full_ciphertext)[0:AGC_STUB_TAG_LEN],
+ * exactly the single-shot tag construction, exposed for a session's Final
+ * to call once the complete ciphertext has been assembled from repeated
+ * agc__stub_aead_*_at() calls. */
+void agc__stub_tag_from_parts(const uint8_t *key, size_t key_len,
+                               const uint8_t *nonce, size_t nonce_len,
+                               const uint8_t *aad, size_t aad_len,
+                               const uint8_t *ciphertext, size_t ciphertext_len,
+                               uint8_t out_tag[AGC_STUB_TAG_LEN]);
+
 #ifdef __cplusplus
 }
 #endif

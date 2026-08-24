@@ -38,6 +38,7 @@ set(AGC_LIB_SOURCES
     src/store/keystore.c
     src/services/key.c
     src/services/crypto.c
+    src/services/stream.c
 )
 
 add_library(agilecrypto SHARED ${AGC_LIB_SOURCES})

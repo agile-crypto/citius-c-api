@@ -30,22 +30,63 @@ void agc__stub_expand(const uint8_t *key, size_t key_len,
     }
 }
 
-/* No heap allocation needed: XOR the keystream byte-by-byte as it is
- * generated, so encrypt/decrypt work on arbitrarily large buffers without an
- * intermediate allocation. */
-static void xor_with_expand(const uint8_t *key, size_t key_len,
-                             const uint8_t *context, size_t context_len,
-                             const uint8_t *in, size_t len, uint8_t *out)
+/* Keystream byte at absolute position `pos`, seeded from (key, nonce). This
+ * is the primitive both the one-shot (commit 8) and streaming (commit 9)
+ * AEAD paths are built from: a pure function of (key, nonce, position), so
+ * a session can compute any chunk's ciphertext independently of any other
+ * chunk having been processed yet. */
+static uint8_t keystream_byte_at(uint64_t seed, uint64_t pos)
+{
+    uint8_t counter_bytes[8];
+    for (int b = 0; b < 8; b++) counter_bytes[b] = (uint8_t)(pos >> (8 * b));
+    uint64_t block = fnv1a(counter_bytes, sizeof(counter_bytes), seed);
+    return (uint8_t)(block ^ (block >> 32) ^ (block >> 16) ^ (block >> 8));
+}
+
+static uint64_t nonce_seed(const uint8_t *key, size_t key_len, const uint8_t *nonce, size_t nonce_len)
 {
     uint64_t seed = fnv1a(key, key_len, 0x9E3779B97F4A7C15ULL);
-    seed = fnv1a(context, context_len, seed);
+    return fnv1a(nonce, nonce_len, seed);
+}
+
+static void xor_at(const uint8_t *key, size_t key_len, const uint8_t *nonce, size_t nonce_len,
+                    uint64_t offset, const uint8_t *in, size_t len, uint8_t *out)
+{
+    uint64_t seed = nonce_seed(key, key_len, nonce, nonce_len);
     for (size_t i = 0; i < len; i++) {
-        uint8_t counter_bytes[8];
-        for (int b = 0; b < 8; b++) counter_bytes[b] = (uint8_t)(i >> (8 * b));
-        uint64_t block = fnv1a(counter_bytes, sizeof(counter_bytes), seed);
-        uint8_t ks_byte = (uint8_t)(block ^ (block >> 32) ^ (block >> 16) ^ (block >> 8));
-        out[i] = (uint8_t)(in[i] ^ ks_byte);
+        out[i] = (uint8_t)(in[i] ^ keystream_byte_at(seed, offset + i));
     }
+}
+
+void agc__stub_aead_encrypt_at(const uint8_t *key, size_t key_len,
+                                const uint8_t *nonce, size_t nonce_len,
+                                uint64_t offset, const uint8_t *in, size_t len, uint8_t *out)
+{
+    xor_at(key, key_len, nonce, nonce_len, offset, in, len, out);
+}
+
+void agc__stub_aead_decrypt_at(const uint8_t *key, size_t key_len,
+                                const uint8_t *nonce, size_t nonce_len,
+                                uint64_t offset, const uint8_t *in, size_t len, uint8_t *out)
+{
+    xor_at(key, key_len, nonce, nonce_len, offset, in, len, out);
+}
+
+void agc__stub_tag_from_parts(const uint8_t *key, size_t key_len,
+                               const uint8_t *nonce, size_t nonce_len,
+                               const uint8_t *aad, size_t aad_len,
+                               const uint8_t *ciphertext, size_t ciphertext_len,
+                               uint8_t out_tag[AGC_STUB_TAG_LEN])
+{
+    size_t ctx_len = nonce_len + aad_len + ciphertext_len;
+    uint8_t *ctx_buf = ctx_len ? malloc(ctx_len) : NULL;
+    if (ctx_len && !ctx_buf) { memset(out_tag, 0, AGC_STUB_TAG_LEN); return; }
+    size_t off = 0;
+    if (nonce_len) { memcpy(ctx_buf + off, nonce, nonce_len); off += nonce_len; }
+    if (aad_len) { memcpy(ctx_buf + off, aad, aad_len); off += aad_len; }
+    if (ciphertext_len) { memcpy(ctx_buf + off, ciphertext, ciphertext_len); off += ciphertext_len; }
+    agc__stub_expand(key, key_len, ctx_buf, ctx_len, out_tag, AGC_STUB_TAG_LEN);
+    free(ctx_buf);
 }
 
 void agc__stub_aead_encrypt(const uint8_t *key, size_t key_len,
@@ -54,18 +95,8 @@ void agc__stub_aead_encrypt(const uint8_t *key, size_t key_len,
                              const uint8_t *plaintext, size_t plaintext_len,
                              uint8_t *out_ciphertext, uint8_t *out_tag)
 {
-    xor_with_expand(key, key_len, nonce, nonce_len, plaintext, plaintext_len, out_ciphertext);
-
-    /* tag = expand(key, nonce || aad || ciphertext)[0:TAG_LEN] */
-    size_t ctx_len = nonce_len + aad_len + plaintext_len;
-    uint8_t *ctx_buf = ctx_len ? malloc(ctx_len) : NULL;
-    if (ctx_len && !ctx_buf) { memset(out_tag, 0, AGC_STUB_TAG_LEN); return; }
-    size_t off = 0;
-    if (nonce_len) { memcpy(ctx_buf + off, nonce, nonce_len); off += nonce_len; }
-    if (aad_len) { memcpy(ctx_buf + off, aad, aad_len); off += aad_len; }
-    if (plaintext_len) { memcpy(ctx_buf + off, out_ciphertext, plaintext_len); off += plaintext_len; }
-    agc__stub_expand(key, key_len, ctx_buf, ctx_len, out_tag, AGC_STUB_TAG_LEN);
-    free(ctx_buf);
+    agc__stub_aead_encrypt_at(key, key_len, nonce, nonce_len, 0, plaintext, plaintext_len, out_ciphertext);
+    agc__stub_tag_from_parts(key, key_len, nonce, nonce_len, aad, aad_len, out_ciphertext, plaintext_len, out_tag);
 }
 
 int agc__stub_aead_decrypt(const uint8_t *key, size_t key_len,
@@ -76,18 +107,9 @@ int agc__stub_aead_decrypt(const uint8_t *key, size_t key_len,
                             uint8_t *out_plaintext)
 {
     uint8_t expected_tag[AGC_STUB_TAG_LEN];
-    size_t ctx_len = nonce_len + aad_len + ciphertext_len;
-    uint8_t *ctx_buf = ctx_len ? malloc(ctx_len) : NULL;
-    if (ctx_len && !ctx_buf) return 0;
-    size_t off = 0;
-    if (nonce_len) { memcpy(ctx_buf + off, nonce, nonce_len); off += nonce_len; }
-    if (aad_len) { memcpy(ctx_buf + off, aad, aad_len); off += aad_len; }
-    if (ciphertext_len) { memcpy(ctx_buf + off, ciphertext, ciphertext_len); off += ciphertext_len; }
-    agc__stub_expand(key, key_len, ctx_buf, ctx_len, expected_tag, AGC_STUB_TAG_LEN);
-    free(ctx_buf);
-
+    agc__stub_tag_from_parts(key, key_len, nonce, nonce_len, aad, aad_len, ciphertext, ciphertext_len, expected_tag);
     int ok = agc_ct_equal(expected_tag, tag, AGC_STUB_TAG_LEN);
-    xor_with_expand(key, key_len, nonce, nonce_len, ciphertext, ciphertext_len, out_plaintext);
+    agc__stub_aead_decrypt_at(key, key_len, nonce, nonce_len, 0, ciphertext, ciphertext_len, out_plaintext);
     return ok;
 }
 

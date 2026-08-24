@@ -14,7 +14,11 @@ struct agc_session {
     char                  *selected_template;  /* owned, optional */
     void                  *impl_state;
     struct agc_session_ops ops;
-    int                    is_open;             /* 0 once cancelled/finalised */
+    int                    is_open;             /* 0 once cancelled/finalised: gates further
+                                                  * Update/Final-shaped calls */
+    int                    destroyed;           /* 0 until ops.destroy(impl_state) has actually
+                                                  * run: gates the destructor, independently of
+                                                  * is_open -- see agc__session_force_close() */
 };
 
 static atomic_ullong g_session_counter = 0;
@@ -90,7 +94,19 @@ void agc__session_mark_closed(agc_session *s)
 void agc__session_force_close(agc_session *s)
 {
     if (!s) return;
-    if (s->is_open && s->ops.destroy) s->ops.destroy(s->impl_state);
+    /* Gated on `destroyed`, not `is_open`: a family's successful Final call
+     * (e.g. agc_encrypt_final) marks the session closed via
+     * agc__session_mark_closed() well before agc_session_free() runs, and
+     * that must NOT skip the destructor -- it would leak the impl_state's
+     * key material and buffers on every cleanly-finalised session, which is
+     * the common case, not the exception. `destroyed` makes running the
+     * destructor idempotent regardless of how many times force_close is
+     * invoked (agc_session_cancel() then agc_session_free(), or
+     * agc_ctx_close() sweeping a session the caller never freed). */
+    if (!s->destroyed && s->ops.destroy) {
+        s->ops.destroy(s->impl_state);
+    }
+    s->destroyed = 1;
     s->is_open = 0;
 }
 
