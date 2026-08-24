@@ -29,9 +29,8 @@
 extern "C" {
 #endif
 
-/* Forces int32 storage for every enum regardless of -fshort-enums, so the
- * C enum width matches the protobuf wire type. */
-#define AGC_ENUM32(n) , n##_FORCE32 = 0x7fffffff
+/* AGC_ENUM32 is hand-written infrastructure from agc_abi.h, used below on
+ * every generated enum. Not redefined here. */
 
 /* --------------------------------------------------------------------------
  * Result codes

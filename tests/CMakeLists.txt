@@ -11,6 +11,7 @@ endfunction()
 
 agc_add_test(test_version test_version.c)
 agc_add_test(test_types test_types.c)
+agc_add_test(test_abi test_abi.c)
 
 # Tier 1 vocabulary conformance (RECONCILIATION_PLAN.md §7): the generated
 # agc_types.h must carry exactly the proto's enum values, no more, no fewer.
