@@ -207,6 +207,26 @@ agc_rc agc__iter_next(agc_generic_iter *it, void **out_item);
 
 void   agc__iter_free(agc_generic_iter *it);
 
+/* --------------------------------------------------------------------------
+ * Provider store (src/store/providerstore.c), backing agc_provider.h
+ * (commit 11). One static ProviderInfo ("stub") plus a real, per-context,
+ * mutable store of ProviderInstance registrations.
+ * -------------------------------------------------------------------------- */
+struct agc_provider_instance_spec;
+
+int agc__provider_is_known(const char *provider_id);
+agc_provider_info *agc__make_stub_provider_info(void);
+agc_impl_props    *agc__make_stub_impl_props(void);
+
+agc_rc agc__providerstore_register(agc_ctx *ctx, const struct agc_provider_instance_spec *spec,
+                                    agc_provider_instance **out_instance);
+agc_rc agc__providerstore_get(agc_ctx *ctx, const char *instance_id, agc_provider_instance **out);
+agc_rc agc__providerstore_update(agc_ctx *ctx, const struct agc_provider_instance_spec *spec,
+                                  agc_provider_instance **out_instance);
+agc_rc agc__providerstore_delete(agc_ctx *ctx, const char *instance_id);
+agc_rc agc__providerstore_list(agc_ctx *ctx, const char *provider_id_filter, int enabled_only,
+                                agc_provider_instance ***out_items, size_t *out_count);
+
 #ifdef __cplusplus
 }
 #endif

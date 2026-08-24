@@ -34,5 +34,8 @@
 #include "agc_crypto.h"
 #include "agc_stream.h"
 #include "agc_establish.h"
+#include "agc_policy.h"
+#include "agc_discovery.h"
+#include "agc_provider.h"
 
 #endif /* AGILECRYPTO_H */

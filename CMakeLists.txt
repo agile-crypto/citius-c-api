@@ -36,10 +36,15 @@ set(AGC_LIB_SOURCES
     src/stub/stub_random.c
     src/stub/stub_crypto.c
     src/store/keystore.c
+    src/store/policystore.c
+    src/store/providerstore.c
     src/services/key.c
     src/services/crypto.c
     src/services/stream.c
     src/services/establish.c
+    src/services/policy.c
+    src/services/discovery.c
+    src/services/provider.c
 )
 
 add_library(agilecrypto SHARED ${AGC_LIB_SOURCES})
