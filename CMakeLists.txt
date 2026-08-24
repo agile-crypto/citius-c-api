@@ -23,7 +23,7 @@ include(GNUInstallDirs)
 # than globbed, so a file that fails to compile fails the specific commit that
 # introduced it rather than silently vanishing from the build.
 # ----------------------------------------------------------------------------
-add_library(agilecrypto SHARED
+set(AGC_LIB_SOURCES
     src/core/version.c
     src/core/agc_types.c
     src/core/error.c
@@ -31,7 +31,11 @@ add_library(agilecrypto SHARED
     src/core/ctx.c
     src/core/session.c
     src/core/iter.c
+    src/wire/protobuf_wire.c
+    src/wire/metadata_codec.c
 )
+
+add_library(agilecrypto SHARED ${AGC_LIB_SOURCES})
 
 target_include_directories(agilecrypto
     PUBLIC
@@ -58,6 +62,27 @@ endif()
 
 find_package(Threads REQUIRED)
 target_link_libraries(agilecrypto PRIVATE Threads::Threads)
+
+# Whitebox test double: the SAME sources, built as a static library with
+# default (non-hidden) visibility and src/ on the include path, so tests that
+# need an internal-only symbol (agc_internal.h) -- e.g. constructing an
+# agc_metadata directly to check the wire codec against real protobuf output
+# -- can link against it instead of the real installed shared library.
+# Never installed; exists purely for tests/.
+if(AGC_BUILD_TESTS)
+    add_library(agilecrypto_whitebox STATIC ${AGC_LIB_SOURCES})
+    target_include_directories(agilecrypto_whitebox
+        PUBLIC
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/agc
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/wire
+    )
+    target_link_libraries(agilecrypto_whitebox PRIVATE Threads::Threads)
+    target_compile_options(agilecrypto_whitebox PRIVATE -Wall -Wextra -Wpedantic)
+    if(AGC_ENABLE_PROPOSED_EXTENSIONS)
+        target_compile_definitions(agilecrypto_whitebox PUBLIC AGC_ENABLE_PROPOSED_EXTENSIONS=1)
+    endif()
+endif()
 
 # ----------------------------------------------------------------------------
 # pkg-config

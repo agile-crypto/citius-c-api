@@ -72,6 +72,36 @@ agc_session *agc__ctx_find_session(agc_ctx *ctx, const char *operation_id);
 int agc__ctx_is_poisoned(const agc_ctx *ctx);
 
 /* --------------------------------------------------------------------------
+ * Metadata construction. The public API never lets a caller assemble
+ * OperationMetadata field-by-field (it is always "the core's copy of a
+ * provider response", per messages/metadata.proto's own framing) -- this is
+ * the internal constructor a provider backend (src/stub/, commit 8 onward)
+ * uses to hand off a freshly-produced result before it is wrapped in the
+ * opaque agc_metadata handle.
+ * -------------------------------------------------------------------------- */
+typedef struct agc__metadata_build {
+    uint32_t     key_version;
+    const char  *api_version;    /* borrowed for the call; copied internally, may be NULL */
+    agc_kv_list  user_context;   /* borrowed for the call; copied internally */
+    const char  *encoding;       /* borrowed for the call; copied internally, may be NULL */
+
+    agc_algorithm_output_kind kind; /* must not be AGC_ALGORITHM_OUTPUT_NONE */
+    union {
+        struct { agc_slice nonce; uint32_t tag_length_bytes; }      aead;
+        struct { agc_slice iv; }                                    block_cipher;
+        struct { agc_slice counter_block; uint32_t counter_bits; }  counter_mode;
+        struct { agc_slice nonce; agc_slice block_counter; }        stream_cipher;
+        struct { agc_slice salt; agc_slice iv; }                    kdf;
+        struct { const agc_kb *items; size_t count; }               vendor;
+    } out;
+} agc__metadata_build;
+
+/* Fails with AGC_ERR_INVALID_ARGUMENT if b->kind == AGC_ALGORITHM_OUTPUT_NONE
+ * -- the internal constructor enforces the same "provider must always set
+ * the oneof" contract that decode() enforces on stored bytes. */
+agc_rc agc__metadata_create(const agc__metadata_build *b, agc_metadata **out_md);
+
+/* --------------------------------------------------------------------------
  * Generic snapshot iterator. EMBEDDED mode has no network to page lazily
  * over, so the concrete iterators (agc_key_iter etc., commits 7/11) wrap this
  * rather than reimplementing paging five times: the backing store enumerates

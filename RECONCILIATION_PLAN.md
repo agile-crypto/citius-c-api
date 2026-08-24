@@ -145,7 +145,7 @@ Each is applied uniformly; §2 and §3 are applications of these, not new rules.
 | `optional <Message>` | `const T *`, `NULL` = absent | `MigrateKeyRequest.scope_spec`, `KeyMetadata.public_key_bytes/format`. |
 | `enum` | `typedef enum` + `= 0x7fffffff` sentinel | Forces int32 width regardless of `-fshort-enums`, matching the wire type. |
 | `map<string,string>` | `agc_kv_list{const agc_kv*, size_t}` in; indexed accessors out | Duplicate keys rejected with `AGC_ERR_INVALID_ARGUMENT`. |
-| `map<string,bytes>` | `agc_kb_list` in; indexed accessors out | `VendorOutput.parameters`, `NoAlgorithmOutput.parameters`. |
+| `map<string,bytes>` | `agc_kb_list` in; indexed accessors out | `VendorOutput.parameters` (the only `map<string,bytes>` field on the `ProviderOutput` oneof; `NoAlgorithmOutput` is empty). |
 | `map<string,ConfigurationParameter>` | indexed accessor returning the 5 scalars | `ProviderInfo.configuration_schema`. |
 | `repeated <scalar>` | `agc_str_list` / `const T* + count` | |
 | `repeated <message>` | indexed accessors on the parent handle | Per D6. |
@@ -276,10 +276,13 @@ maps per message. **This must be stated in the header** so nobody later "fixes" 
 preserving the proto's property that "intentionally no parameters" is distinguishable from
 "forgot to set the required oneof" (tag `0` = `NONE`, always rejected).
 
-> **Correction:** `NoAlgorithmOutput` is **not empty** — it is
-> `{map<string,bytes> parameters = 1}`. `AGC_ALGORITHM_OUTPUT_NO_OUTPUT` therefore needs
-> `agc_metadata_no_output_param_count()/_at()`, which Version B omitted by treating it as a
-> bare tag.
+> **Correction (superseding an earlier draft of this plan):** `NoAlgorithmOutput` really is
+> `{}` — genuinely empty, verified directly against `messages/metadata.proto`. An earlier pass
+> over this file used a regex-based field extractor that mis-attributed a neighbouring
+> message's fields to it (the same class of bug that briefly misread `NoParams` during the
+> original audit); that misreading was corrected before any code was written against it.
+> `AGC_ALGORITHM_OUTPUT_NO_OUTPUT` is correctly a bare tag with no accessors, exactly as
+> Version B had it. `VendorOutput` is the one arm that carries `map<string, bytes> parameters`.
 
 ### 2.6 The algorithm catalog — deliberately not in the ABI
 

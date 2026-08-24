@@ -56,6 +56,20 @@ TAG_REGISTRY = [
             "AGC_CUSTOM_PARAMS_TYPED": "typed_params",
         },
     ),
+    (
+        "agc_core.h",
+        "api/messages/metadata.proto",
+        "ProviderOutput",
+        {
+            "AGC_ALGORITHM_OUTPUT_NO_OUTPUT": "no_output",
+            "AGC_ALGORITHM_OUTPUT_AEAD": "aead_output",
+            "AGC_ALGORITHM_OUTPUT_BLOCK_CIPHER": "block_cipher_output",
+            "AGC_ALGORITHM_OUTPUT_COUNTER_MODE": "counter_mode_output",
+            "AGC_ALGORITHM_OUTPUT_STREAM_CIPHER": "stream_cipher_output",
+            "AGC_ALGORITHM_OUTPUT_KDF": "kdf_output",
+            "AGC_ALGORITHM_OUTPUT_VENDOR": "vendor_output",
+        },
+    ),
 ]
 
 

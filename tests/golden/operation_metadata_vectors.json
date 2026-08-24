@@ -1,0 +1,78 @@
+{
+  "aead": {
+    "aead_nonce_hex": "0102030405060708090a0b0c",
+    "aead_tag_length_bytes": 16,
+    "api_version": "1.0",
+    "bytes": "080312170a037261775a100a0c0102030405060708090a0b0c10101a03312e30220e0a0674656e616e74120461636d65",
+    "encoding": "raw",
+    "key_version": 3,
+    "output_kind": "AEAD",
+    "user_context": {
+      "tenant": "acme"
+    }
+  },
+  "block_cipher": {
+    "api_version": "",
+    "block_iv_hex": "000102030405060708090a0b0c0d0e0f",
+    "bytes": "0807121462120a10000102030405060708090a0b0c0d0e0f",
+    "key_version": 7,
+    "output_kind": "BLOCK_CIPHER",
+    "user_context": {}
+  },
+  "counter_mode": {
+    "api_version": "",
+    "bytes": "12166a140a10000102030405060708090a0b0c0d0e0f1040",
+    "counter_bits": 64,
+    "counter_block_hex": "000102030405060708090a0b0c0d0e0f",
+    "key_version": 0,
+    "output_kind": "COUNTER_MODE",
+    "user_context": {}
+  },
+  "kdf": {
+    "api_version": "",
+    "bytes": "121a7a180a1001010101010101010101010101010101120402020202",
+    "kdf_iv_hex": "02020202",
+    "kdf_salt_hex": "01010101010101010101010101010101",
+    "key_version": 0,
+    "output_kind": "KDF",
+    "user_context": {}
+  },
+  "multi_user_context": {
+    "api_version": "1.0",
+    "bytes": "082a12070a0364657252001a03312e3022150a0a726571756573745f696412076162632d313233220e0a0674656e616e74120461636d65",
+    "encoding": "der",
+    "key_version": 42,
+    "output_kind": "NO_OUTPUT",
+    "user_context": {
+      "request_id": "abc-123",
+      "tenant": "acme"
+    }
+  },
+  "no_output": {
+    "api_version": "1.0",
+    "bytes": "0801120252001a03312e30",
+    "key_version": 1,
+    "output_kind": "NO_OUTPUT",
+    "user_context": {}
+  },
+  "stream_cipher": {
+    "api_version": "",
+    "bytes": "121272100a08aaaaaaaaaaaaaaaa120400000001",
+    "key_version": 0,
+    "output_kind": "STREAM_CIPHER",
+    "stream_block_counter_hex": "00000001",
+    "stream_nonce_hex": "aaaaaaaaaaaaaaaa",
+    "user_context": {}
+  },
+  "vendor": {
+    "api_version": "",
+    "bytes": "12248201210a130a0b6174746573746174696f6e1204deadbeef0a0a0a04736c6f7412020001",
+    "key_version": 0,
+    "output_kind": "VENDOR",
+    "user_context": {},
+    "vendor_params": {
+      "attestation": "deadbeef",
+      "slot": "0001"
+    }
+  }
+}
