@@ -230,17 +230,6 @@ agc_rc agc_encrypt_update(agc_session *s, agc_slice plaintext_chunk, agc_buf out
     return AGC_OK;
 }
 
-static agc_rc build_no_output_metadata(uint32_t key_version, agc_kv_list user_context, agc_metadata **out_md)
-{
-    agc__metadata_build mb;
-    memset(&mb, 0, sizeof(mb));
-    mb.key_version = key_version;
-    mb.api_version = AGC_API_VERSION_STRING;
-    mb.user_context = user_context;
-    mb.kind = AGC_ALGORITHM_OUTPUT_NO_OUTPUT;
-    return agc__metadata_create(&mb, out_md);
-}
-
 agc_rc agc_encrypt_final(agc_session *s, agc_buf out, size_t *out_len, agc_metadata **out_md)
 {
     if (out_md) *out_md = NULL;
@@ -280,7 +269,7 @@ agc_rc agc_encrypt_final(agc_session *s, agc_buf out, size_t *out_len, agc_metad
             mb.out.block_cipher.iv = (agc_slice){st->nonce, st->nonce_len};
             rc = agc__metadata_create(&mb, out_md);
         } else {
-            rc = build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+            rc = agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
         }
     }
     agc__session_mark_closed(s);
@@ -375,7 +364,7 @@ agc_rc agc_decrypt_final(agc_session *s, agc_buf out, size_t *out_len, agc_metad
     if (st->enc_kind != AGC_ENCRYPT_PARAMS_AEAD) {
         *out_len = 0;
         agc__session_mark_closed(s);
-        if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+        if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
         return AGC_OK;
     }
 
@@ -395,7 +384,7 @@ agc_rc agc_decrypt_final(agc_session *s, agc_buf out, size_t *out_len, agc_metad
     *out_len = 0; /* everything decryptable was already released via Update */
     if (!ok) return AGC_ERR_CRYPTO_AUTHENTICATION_FAILED;
 
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -618,7 +607,7 @@ agc_rc agc_decrypt_message(agc_ctx *ctx, const agc_decrypt_message_request *req,
         return AGC_ERR_CRYPTO_AUTHENTICATION_FAILED;
     }
 
-    if (out_md) return build_no_output_metadata(version, req->user_context, out_md);
+    if (out_md) return agc__build_no_output_metadata(version, req->user_context, out_md);
     return AGC_OK;
 }
 
@@ -696,7 +685,7 @@ agc_rc agc_decrypt_message_final(agc_session *s, agc_buf out, size_t *out_len, a
     agc__session_mark_closed(s); /* tears down the session -- one message per session, see above */
     if (!ok) return AGC_ERR_CRYPTO_AUTHENTICATION_FAILED;
 
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -776,7 +765,7 @@ agc_rc agc_sign_final(agc_session *s, agc_buf out_signature, size_t *out_len, ag
     agc__stub_sign(st->key, st->key_len, st->sign_ctx, st->sign_ctx_len,
                    st->msg_accum.data, st->msg_accum.len, out_signature.data);
     agc__session_mark_closed(s);
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -822,7 +811,7 @@ agc_rc agc_verify_final(agc_session *s, agc_slice signature, int *out_valid, agc
     agc__session_mark_closed(s);
     if (!ok) return AGC_ERR_CRYPTO_SIGNATURE_INVALID;
     if (out_valid) *out_valid = 1;
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -868,7 +857,7 @@ agc_rc agc_sign_message(agc_ctx *ctx, const agc_sign_message_request *req,
     agc_secure_zero(secret, secret_len);
     free(secret);
 
-    if (out_md) return build_no_output_metadata(version, req->user_context, out_md);
+    if (out_md) return agc__build_no_output_metadata(version, req->user_context, out_md);
     return AGC_OK;
 }
 
@@ -908,7 +897,7 @@ agc_rc agc_sign_message_final(agc_session *s, agc_buf out_signature, size_t *out
 
     agc__stub_sign(st->key, st->key_len, NULL, 0, st->msg_accum.data, st->msg_accum.len, out_signature.data);
     agc__session_mark_closed(s); /* one message per session -- see the family header comment */
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -952,7 +941,7 @@ agc_rc agc_verify_message(agc_ctx *ctx, const agc_verify_message_request *req,
 
     if (!ok) return AGC_ERR_CRYPTO_SIGNATURE_INVALID;
     if (out_valid) *out_valid = 1;
-    if (out_md) return build_no_output_metadata(version, req->user_context, out_md);
+    if (out_md) return agc__build_no_output_metadata(version, req->user_context, out_md);
     return AGC_OK;
 }
 
@@ -992,7 +981,7 @@ agc_rc agc_verify_message_final(agc_session *s, agc_slice signature, int *out_va
     agc__session_mark_closed(s);
     if (!ok) return AGC_ERR_CRYPTO_SIGNATURE_INVALID;
     if (out_valid) *out_valid = 1;
-    if (out_md) return build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(st->key_version, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -1058,7 +1047,7 @@ agc_rc agc_digest_final(agc_session *s, agc_buf out, size_t *out_len, agc_metada
 
     agc__stub_digest(st->msg_accum.data, st->msg_accum.len, out.data);
     agc__session_mark_closed(s);
-    if (out_md) return build_no_output_metadata(0, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(0, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 
@@ -1107,7 +1096,7 @@ agc_rc agc_xof_final(agc_session *s, agc_buf out, size_t *out_len, agc_metadata 
 
     agc__stub_xof(st->msg_accum.data, st->msg_accum.len, out.data, st->xof_len);
     agc__session_mark_closed(s);
-    if (out_md) return build_no_output_metadata(0, (agc_kv_list){0}, out_md);
+    if (out_md) return agc__build_no_output_metadata(0, (agc_kv_list){0}, out_md);
     return AGC_OK;
 }
 

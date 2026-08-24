@@ -802,3 +802,14 @@ const char *agc_metadata_user_context_get(const agc_metadata *md, const char *ke
     }
     return NULL;
 }
+
+agc_rc agc__build_no_output_metadata(uint32_t key_version, agc_kv_list user_context, agc_metadata **out_md)
+{
+    agc__metadata_build mb;
+    memset(&mb, 0, sizeof(mb));
+    mb.key_version = key_version;
+    mb.api_version = AGC_API_VERSION_STRING;
+    mb.user_context = user_context;
+    mb.kind = AGC_ALGORITHM_OUTPUT_NO_OUTPUT;
+    return agc__metadata_create(&mb, out_md);
+}

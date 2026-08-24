@@ -174,6 +174,13 @@ typedef struct agc__metadata_build {
  * the oneof" contract that decode() enforces on stored bytes. */
 agc_rc agc__metadata_create(const agc__metadata_build *b, agc_metadata **out_md);
 
+/* Convenience used by every service whose response's metadata is always
+ * "no system-generated parameters" (signatures, MACs, key establishment
+ * results, ...): builds and wraps an AGC_ALGORITHM_OUTPUT_NO_OUTPUT
+ * metadata in one call instead of every call site repeating the same
+ * six-line agc__metadata_build boilerplate. */
+agc_rc agc__build_no_output_metadata(uint32_t key_version, agc_kv_list user_context, agc_metadata **out_md);
+
 /* --------------------------------------------------------------------------
  * Generic snapshot iterator. EMBEDDED mode has no network to page lazily
  * over, so the concrete iterators (agc_key_iter etc., commits 7/11) wrap this

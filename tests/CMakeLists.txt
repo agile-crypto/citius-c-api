@@ -32,6 +32,7 @@ agc_add_test(test_fork test_fork.c)
 agc_add_test(test_key_management test_key_management.c)
 agc_add_test(test_crypto test_crypto.c)
 agc_add_test(test_streaming test_streaming.c)
+agc_add_test(test_key_establishment test_key_establishment.c)
 agc_add_whitebox_test(test_protobuf_wire test_protobuf_wire.c)
 agc_add_whitebox_test(test_metadata_codec test_metadata_codec.c)
 
