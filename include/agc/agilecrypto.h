@@ -30,5 +30,6 @@
 #include "agc_scope.h"
 #include "agc_params.h"
 #include "agc_core.h"
+#include "agc_key.h"
 
 #endif /* AGILECRYPTO_H */

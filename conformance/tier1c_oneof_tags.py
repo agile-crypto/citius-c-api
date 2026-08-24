@@ -70,6 +70,33 @@ TAG_REGISTRY = [
             "AGC_ALGORITHM_OUTPUT_VENDOR": "vendor_output",
         },
     ),
+    (
+        "agc_key.h",
+        "api/messages/key_management.proto",
+        "MigrateKeyRequest",
+        {
+            "AGC_MIGRATE_TARGET_INSTANCE": "target_instance_id",
+            "AGC_MIGRATE_TARGET_PROVIDER": "provider_target",
+        },
+    ),
+    (
+        "agc_key.h",
+        "api/messages/key_management.proto",
+        "ValidateKeyOperationRequest",
+        {
+            "AGC_VALIDATE_INTENT_TRANSFORM": "transform",
+            "AGC_VALIDATE_INTENT_MIGRATE": "migrate",
+        },
+    ),
+    (
+        "agc_key.h",
+        "api/messages/key_management.proto",
+        "ValidateMigrateIntent",
+        {
+            "AGC_VALIDATE_MIGRATE_TARGET_INSTANCE": "target_instance_id",
+            "AGC_VALIDATE_MIGRATE_TARGET_PROVIDER": "target_provider_id",
+        },
+    ),
 ]
 
 

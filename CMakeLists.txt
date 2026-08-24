@@ -33,6 +33,9 @@ set(AGC_LIB_SOURCES
     src/core/iter.c
     src/wire/protobuf_wire.c
     src/wire/metadata_codec.c
+    src/stub/stub_random.c
+    src/store/keystore.c
+    src/services/key.c
 )
 
 add_library(agilecrypto SHARED ${AGC_LIB_SOURCES})

@@ -31,6 +31,9 @@ struct agc_ctx {
     size_t        session_count;
     size_t        session_cap;
 
+    void         *ext_slots[AGC_CTX_EXT_SLOT_COUNT];
+    void        (*ext_destructors[AGC_CTX_EXT_SLOT_COUNT])(void *);
+
     struct agc_ctx *fork_prev;
     struct agc_ctx *fork_next;
 };
@@ -186,6 +189,11 @@ void agc_ctx_close(agc_ctx *ctx)
     free(ctx->sessions);
     ctx->sessions = NULL;
     ctx->session_count = ctx->session_cap = 0;
+    for (int i = 0; i < AGC_CTX_EXT_SLOT_COUNT; i++) {
+        if (ctx->ext_slots[i] && ctx->ext_destructors[i]) {
+            ctx->ext_destructors[i](ctx->ext_slots[i]);
+        }
+    }
     pthread_mutex_unlock(&ctx->mutex);
     pthread_mutex_destroy(&ctx->mutex);
 
@@ -278,6 +286,43 @@ void agc__ctx_unregister_session(agc_ctx *ctx, agc_session *s)
         }
     }
     pthread_mutex_unlock(&ctx->mutex);
+}
+
+void agc__ctx_set_ext(agc_ctx *ctx, agc_ctx_ext_slot slot, void *state, void (*destroy)(void *))
+{
+    if (!ctx || slot < 0 || slot >= AGC_CTX_EXT_SLOT_COUNT) return;
+    pthread_mutex_lock(&ctx->mutex);
+    ctx->ext_slots[slot] = state;
+    ctx->ext_destructors[slot] = destroy;
+    pthread_mutex_unlock(&ctx->mutex);
+}
+
+void *agc__ctx_get_ext(agc_ctx *ctx, agc_ctx_ext_slot slot)
+{
+    if (!ctx || slot < 0 || slot >= AGC_CTX_EXT_SLOT_COUNT) return NULL;
+    pthread_mutex_lock(&ctx->mutex);
+    void *v = ctx->ext_slots[slot];
+    pthread_mutex_unlock(&ctx->mutex);
+    return v;
+}
+
+void *agc__ctx_get_or_create_ext(agc_ctx *ctx, agc_ctx_ext_slot slot,
+                                  void *(*create)(void), void (*destroy)(void *))
+{
+    if (!ctx || slot < 0 || slot >= AGC_CTX_EXT_SLOT_COUNT || !create) return NULL;
+    /* Holds the ctx mutex across the whole check-create-store sequence:
+     * agc_ctx is documented thread-safe for concurrent operations (D18), so
+     * two threads racing to be the first to touch a store on the same ctx
+     * must not both allocate one, with one pointer silently leaked (or, if
+     * a use-after-free ever crept into a store's own locking, worse). */
+    pthread_mutex_lock(&ctx->mutex);
+    if (!ctx->ext_slots[slot]) {
+        ctx->ext_slots[slot] = create();
+        ctx->ext_destructors[slot] = destroy;
+    }
+    void *v = ctx->ext_slots[slot];
+    pthread_mutex_unlock(&ctx->mutex);
+    return v;
 }
 
 agc_session *agc__ctx_find_session(agc_ctx *ctx, const char *operation_id)
