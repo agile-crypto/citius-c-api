@@ -25,6 +25,16 @@ extern "C" {
 #endif
 
 /* --------------------------------------------------------------------------
+ * Buffer-length bounds
+ * -------------------------------------------------------------------------- */
+
+#define AGC_API_VERSION_MAX_LEN     8      /* "{0..255}.{0..255}" + NUL */
+#define AGC_OUTPUT_ENCODING_MAX_LEN 16     /* output encoding token + NUL: "raw", "der", "jws", "cbor" */
+/* NUL-terminated provider identifier capacity in responses that name the
+ * provider that served a request. */
+#define AGC_PROVIDER_ID_MAX         64
+#define AGC_TEMPLATE_ID_MAX         64
+/* --------------------------------------------------------------------------
  * ABI / API version
  * -------------------------------------------------------------------------- */
 
@@ -71,6 +81,7 @@ extern "C" {
  * library knows about but the old header didn't declare. */
 #define AGC_FIELD_FITS(p, field) \
     (offsetof(__typeof__(*(p)), field) + sizeof((p)->field) <= (p)->struct_size)
+
 
 /* --------------------------------------------------------------------------
  * Presence: three-valued booleans

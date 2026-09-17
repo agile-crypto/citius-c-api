@@ -1,29 +1,41 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
  * agc_crypto.h — CryptoService (12 RPCs; api/services/crypto_service.proto).
- * Single-shot, stateless operations. Streaming equivalents are agc_stream.h
- * (commit 9).
+ * Single-shot, stateless operations. Streaming equivalents are agc_stream.h.
+ *
+ * SHAPE OF EVERY CALL
+ * -------------------
+ *     agc_rc agc_<op>(agc_ctx *ctx, const agc_<op>_request *req, agc_<op>_response *resp);
+ *
+ * One request struct, one response struct, both CALLER-ALLOCATED, both
+ * beginning with struct_size (AGC_INIT). The library writes only into
+ * regions the caller placed in the response; it allocates nothing the caller
+ * sees and there is nothing to free. Rules: docs/agc_crypto.md.
+ *
+ * SIZE QUERIES
+ * ------------
+ * Every output region in a response is an agc_buf plus a length. If ANY
+ * output region has data == NULL, or is present but too small, the call
+ * returns AGC_ERR_BUFFER_TOO_SMALL with EVERY *_len field of the response
+ * set to its requirement, having performed no provider work and drawn no
+ * randomness. One retry therefore always suffices. A response
+ * materialisation can never fail after the provider has done its work.
+ *
+ * METADATA
+ * --------
+ * Every keyed operation that produces an artifact returns its OperationMetadata
+ * ENCODED in req->metadata_encoding, encoding byte first, into
+ * resp->metadata, plus resp->key_version as a scalar copy of the value
+ * inside. The metadata is handed back as agc_slice to the consuming operation. 
+ * It can be decoded with agc_metadata_decode() when fields are needed.
  *
  * THE VERIFICATION CONTRACT (D9)
  * -------------------------------
- * The proto returns `bool valid` in a successful VerifyResponse. A C binding
- * that copied that shape verbatim creates a well-known failure mode:
+ * resp->valid is set to 0 BEFORE any work, and a cryptographically invalid
+ * signature/MAC returns AGC_ERR_CRYPTO_SIGNATURE_INVALID /
+ * AGC_ERR_CRYPTO_AUTHENTICATION_FAILED AND leaves resp->valid 0. Either
+ * `rc != AGC_OK` or `!resp->valid` alone is sufficient (DV-01).
  *
- *     agc_verify(ctx, ..., &valid);      // rc ignored
- *     if (valid) { accept(); }           // valid is uninitialised on error
- *
- * So verification here is fail-closed twice:
- *   1. *out_valid is set to 0 BEFORE any work is attempted, so an early
- *      error return can never leave it holding a stale or uninitialised
- *      true.
- *   2. A cryptographically invalid signature/MAC returns
- *      AGC_ERR_CRYPTO_SIGNATURE_INVALID / AGC_ERR_CRYPTO_AUTHENTICATION_FAILED
- *      AND sets *out_valid = 0.
- * Both `if (rc != AGC_OK)` and `if (!valid)` are therefore individually
- * sufficient. out_valid may be NULL if the caller relies on rc alone. This
- * is a declared divergence (DV-01) from the proto's response shape, not an
- * accuracy gap: a gateway maps the error code back to
- * VerifyResponse{valid:false} rather than a transport error.
  */
 
 #ifndef AGC_CRYPTO_H
@@ -32,10 +44,18 @@
 #include "agc_core.h"
 #include "agc_scope.h"
 #include "agc_params.h"
+#include "agc_metadata.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* NUL-terminated provider identifier capacity in responses that name the
+ * provider that served a request. */
+#define AGC_PROVIDER_ID_MAX   64
+/* NUL-terminated human-readable message capacity (agc_seed_random_response). */
+#define AGC_SEED_MESSAGE_MAX 128
+#define AGC_TEMPLATE_ID_MAX   64
 
 /* --------------------------------------------------------------------------
  * Encrypt / Decrypt
@@ -43,32 +63,52 @@ extern "C" {
 
 typedef struct agc_encrypt_request {
     size_t                    struct_size;
-    const char               *key_name;      /* REQUIRED */
-    agc_slice                 plaintext;
-    const agc_encrypt_params *params;        /* REQUIRED -- the oneof is required */
-    agc_kv_list               user_context;
+    const char               *key_name;           /* REQUIRED */
+    agc_slice                 plaintext;          /* borrowed for the call */
+    const agc_encrypt_params *params;             /* REQUIRED -- the oneof is required */
+    agc_kv_list               user_context;       /* borrowed for the call; echoed into the metadata */
+    agc_encoding              metadata_encoding;  /* REQUIRED; UNSPECIFIED is rejected */
 } agc_encrypt_request;
 
-/* *out_md receives the metadata that MUST be stored with the ciphertext; it
- * carries the system-generated nonce/IV without which decryption is
- * impossible. The caller frees it with agc_metadata_free after encoding it
- * for storage. */
+typedef struct agc_encrypt_response {
+    size_t   struct_size;
+    agc_buf  ciphertext;      /* IN: caller region. OUT: written; length below */
+    size_t   ciphertext_len;
+    agc_buf  metadata;        /* IN: caller region. OUT: encoded OperationMetadata, encoding byte first */
+    size_t   metadata_len;
+    uint32_t key_version;     /* copy of the key_version inside `metadata` */
+} agc_encrypt_response;
+
+/* The metadata is not optional: it carries the system-generated nonce/IV
+ * without which decryption is impossible. */
 AGC_API agc_rc agc_encrypt(agc_ctx *ctx, const agc_encrypt_request *req,
-                           agc_buf out, size_t *out_len, agc_metadata **out_md);
+                           agc_encrypt_response *resp);
 
 typedef struct agc_decrypt_request {
     size_t                    struct_size;
     const char               *key_name;      /* REQUIRED */
-    agc_slice                 ciphertext;
-    const agc_metadata       *metadata;      /* REQUIRED -- from the encrypt call */
+    agc_slice                 ciphertext;    /* borrowed for the call */
+    agc_slice                 metadata;      /* REQUIRED -- encoded, encoding byte first, from the encrypt call */
     const agc_encrypt_params *params;        /* REQUIRED -- must match encryption */
-    agc_kv_list               user_context;
+    agc_kv_list               user_context;  /* borrowed for the call */
 } agc_decrypt_request;
 
+typedef struct agc_decrypt_response {
+    size_t   struct_size;
+    agc_buf  plaintext;       /* IN: caller region. OUT: written on success only */
+    size_t   plaintext_len;
+    agc_buf  metadata;        /* IN: caller region. OUT: encoded metadata of this decrypt, in the
+                                 encoding of req->metadata; may be {NULL,0} if the caller does not want it */
+    size_t   metadata_len;
+    uint32_t key_version;
+} agc_decrypt_response;
+
 /* AEAD tag failure returns AGC_ERR_CRYPTO_AUTHENTICATION_FAILED and writes
- * nothing to `out`. Plaintext is never released on authentication failure. */
+ * nothing to resp->plaintext. Plaintext is never released on authentication
+ * failure. A NULL resp->metadata.data is NOT a size query here: it opts out
+ * of the metadata output, since the caller already holds the input one. */
 AGC_API agc_rc agc_decrypt(agc_ctx *ctx, const agc_decrypt_request *req,
-                           agc_buf out, size_t *out_len, agc_metadata **out_md);
+                           agc_decrypt_response *resp);
 
 /* --------------------------------------------------------------------------
  * Sign / Verify
@@ -76,27 +116,47 @@ AGC_API agc_rc agc_decrypt(agc_ctx *ctx, const agc_decrypt_request *req,
 
 typedef struct agc_sign_request {
     size_t                 struct_size;
-    const char            *key_name;      /* REQUIRED */
-    agc_slice              input;         /* message; the service hashes/signs it */
-    const agc_sign_params *params;        /* REQUIRED -- the oneof is required */
+    const char            *key_name;           /* REQUIRED */
+    agc_slice              input;              /* message; the service hashes/signs it */
+    const agc_sign_params *params;             /* REQUIRED -- the oneof is required */
     agc_kv_list            user_context;
+    agc_encoding           metadata_encoding;  /* REQUIRED */
 } agc_sign_request;
 
-AGC_API agc_rc agc_sign(agc_ctx *ctx, const agc_sign_request *req,
-                        agc_buf out_signature, size_t *out_len, agc_metadata **out_md);
+typedef struct agc_sign_response {
+    size_t   struct_size;
+    agc_buf  signature;       /* IN: caller region. OUT: written */
+    size_t   signature_len;
+    agc_buf  metadata;        /* IN: caller region. OUT: encoded metadata, encoding byte first */
+    size_t   metadata_len;
+    uint32_t key_version;
+} agc_sign_response;
+
+AGC_API agc_rc agc_sign(agc_ctx *ctx, const agc_sign_request *req, agc_sign_response *resp);
 
 typedef struct agc_verify_request {
     size_t                 struct_size;
     const char            *key_name;      /* REQUIRED */
     agc_slice              input;
     agc_slice              signature;
-    const agc_metadata    *metadata;      /* carries key_version; REQUIRED after rotation */
+    agc_slice              metadata;      /* encoded, encoding byte first; carries key_version, REQUIRED after rotation.
+                                             {NULL,0} => the key's latest version */
     const agc_sign_params *params;        /* REQUIRED -- must match signing */
     agc_kv_list            user_context;
 } agc_verify_request;
 
-AGC_API agc_rc agc_verify(agc_ctx *ctx, const agc_verify_request *req,
-                          int *out_valid, agc_metadata **out_md);
+/* Shared by every verify-shaped operation (verify, digest_verify, verify_mac). */
+typedef struct agc_verify_response {
+    size_t   struct_size;
+    int      valid;           /* OUT: 0 until proven otherwise (D9) */
+    agc_buf  metadata;        /* IN: caller region, or {NULL,0} to opt out. OUT: encoded metadata of
+                                 this verification, in the encoding of req->metadata (or WIRE_V1 if
+                                 the request carried none) */
+    size_t   metadata_len;
+    uint32_t key_version;     /* the version actually used */
+} agc_verify_response;
+
+AGC_API agc_rc agc_verify(agc_ctx *ctx, const agc_verify_request *req, agc_verify_response *resp);
 
 /* --------------------------------------------------------------------------
  * DigestSign / DigestVerify -- caller supplies a pre-computed digest
@@ -108,26 +168,27 @@ typedef struct agc_digest_sign_request {
     agc_slice              digest;              /* pre-computed */
     const agc_sign_params *params;              /* REQUIRED */
 
-    /* REQUIRED. Declares which hash produced `digest`. The service
-     * validates digest.len against agc_hash_algorithm_output_len(), which is
-     * what stops a SHA-1 digest being presented as SHA-256 to bypass a
-     * policy that forbids SHA-1. AGC_HASH_ALGORITHM_UNSPECIFIED is
-     * rejected. */
+    /* REQUIRED. Declares which hash produced `digest`. Validated against
+     * agc_hash_algorithm_output_len(), which is what stops a SHA-1 digest
+     * being presented as SHA-256 to bypass a policy that forbids SHA-1.
+     * UNSPECIFIED is rejected. */
     agc_hash_algorithm     hash_algorithm;
     const char            *hash_algorithm_oid;  /* required in practice when OTHER */
 
     agc_kv_list            user_context;
+    agc_encoding           metadata_encoding;   /* REQUIRED */
 } agc_digest_sign_request;
 
+/* Same shape as agc_sign_response. */
 AGC_API agc_rc agc_digest_sign(agc_ctx *ctx, const agc_digest_sign_request *req,
-                               agc_buf out_signature, size_t *out_len, agc_metadata **out_md);
+                               agc_sign_response *resp);
 
 typedef struct agc_digest_verify_request {
     size_t                 struct_size;
     const char            *key_name;
     agc_slice              digest;
     agc_slice              signature;
-    const agc_metadata    *metadata;
+    agc_slice              metadata;            /* encoded, encoding byte first; {NULL,0} => latest version */
     const agc_sign_params *params;
     agc_hash_algorithm     hash_algorithm;      /* REQUIRED; must match signing */
     const char            *hash_algorithm_oid;
@@ -135,15 +196,11 @@ typedef struct agc_digest_verify_request {
 } agc_digest_verify_request;
 
 AGC_API agc_rc agc_digest_verify(agc_ctx *ctx, const agc_digest_verify_request *req,
-                                 int *out_valid, agc_metadata **out_md);
+                                 agc_verify_response *resp);
 
 /* Digest length in bytes for a fixed-output hash. Returns 0 for XOFs and for
  * AGC_HASH_ALGORITHM_OTHER/UNSPECIFIED. Lets a caller pre-check the
- * DigestSign contract locally. NOTE: the stub backend (commit 8) always
- * produces AGC_STUB_DIGEST_LEN-byte digests regardless of declared
- * algorithm -- this helper reports the REAL RFC/FIPS output length per
- * agc_hash_algorithm, for callers validating against a real digest,
- * independent of what this stub happens to produce. */
+ * DigestSign contract locally. */
 AGC_API size_t agc_hash_algorithm_output_len(agc_hash_algorithm h);
 
 /* --------------------------------------------------------------------------
@@ -152,101 +209,151 @@ AGC_API size_t agc_hash_algorithm_output_len(agc_hash_algorithm h);
 
 typedef struct agc_mac_request {
     size_t                struct_size;
-    const char           *key_name;      /* REQUIRED */
+    const char           *key_name;           /* REQUIRED */
     agc_slice             message;
-    const agc_mac_params *params;        /* REQUIRED -- the oneof is required */
+    const agc_mac_params *params;             /* REQUIRED -- the oneof is required */
     agc_kv_list           user_context;
+    agc_encoding          metadata_encoding;  /* REQUIRED */
 } agc_mac_request;
 
-AGC_API agc_rc agc_generate_mac(agc_ctx *ctx, const agc_mac_request *req,
-                                agc_buf out_mac, size_t *out_len, agc_metadata **out_md);
+typedef struct agc_mac_response {
+    size_t   struct_size;
+    agc_buf  mac;             /* IN: caller region. OUT: written */
+    size_t   mac_len;
+    agc_buf  metadata;        /* IN: caller region. OUT: encoded metadata, encoding byte first */
+    size_t   metadata_len;
+    uint32_t key_version;
+} agc_mac_response;
+
+AGC_API agc_rc agc_generate_mac(agc_ctx *ctx, const agc_mac_request *req, agc_mac_response *resp);
 
 typedef struct agc_verify_mac_request {
     size_t                struct_size;
     const char           *key_name;
     agc_slice             message;
     agc_slice             mac;
-    const agc_metadata   *metadata;
+    agc_slice             metadata;      /* encoded, encoding byte first; {NULL,0} => latest version */
     const agc_mac_params *params;        /* REQUIRED -- must match generation */
     agc_kv_list           user_context;
 } agc_verify_mac_request;
 
-/* Comparison is constant-time inside the library (agc_ct_equal). */
 AGC_API agc_rc agc_verify_mac(agc_ctx *ctx, const agc_verify_mac_request *req,
-                              int *out_valid, agc_metadata **out_md);
+                              agc_verify_response *resp);
 
 /* --------------------------------------------------------------------------
  * Digest -- keyless, template selected by intent
  * -------------------------------------------------------------------------- */
 
 typedef struct agc_digest_request {
-    size_t                struct_size;
-    const agc_scope_spec *scope_spec;    /* hash scope; NULL only if template_id set */
-    const char           *template_id;   /* explicit; NULL => policy selects */
-    agc_slice             data;
-    const char           *policy_name;   /* optional validation */
-    agc_kv_list           user_context;
+    size_t                          struct_size;
+    agc_hash_scope_spec             scope_spec;             /* REQUIRED */
+    const char                      *template_id;           /* optional; NULL => policy selects */
+    const char                      *provider_id;           /* optional; NULL => policy selects */
+    agc_kv_list                     provider_configuration; /* may be empty */
+    const agc_provider_requirements *provider_requirements; /* NULL => no filter */
+    agc_slice                       data;
+    const char                      *policy_name;           /* REQUIRED - policy governing the operation */
+    agc_kv_list                     user_context;
 } agc_digest_request;
 
-AGC_API agc_rc agc_digest(agc_ctx *ctx, const agc_digest_request *req,
-                          agc_buf out, size_t *out_len, agc_metadata **out_md);
+/* Shared by digest and xof. 
+   Size query for storage: if storage is NULL or too small, returns AGC_ERR_BUFFER_TOO_SMALL and sets storage_used to the required size. 
+*/
+typedef struct agc_digest_response {
+    size_t      struct_size;
+    agc_buf     output;                               /* IN: caller region. OUT: digest or XOF output */
+    size_t      output_len;
+    char        api_version[AGC_API_VERSION_MAX_LEN];  /* OUT: NUL-terminated version of the library that produced it */
+    char        *provider_id;                         /* OUT: NUL-terminated id of the provider that served it;
+                                                         matters for FIPS evidence; 
+                                                         If provided by the request, points to the request's provider_id; 
+                                                         otherwise, lives in the response's storage */
+    char        *template_id;                         /* OUT: NUL-terminated id of the template that served it;
+                                                         matters for FIPS evidence and reproducibility;
+                                                         If provided by the request, points to the request's template_id; 
+                                                         otherwise, lives in the response's storage */
+    uint32_t    policy_version;                       /* OUT: version of the policy that selected the provider/template */
+    agc_buf     storage;                              /* IN: caller region */
+    size_t      storage_used;
+} agc_digest_response;
+
+AGC_API agc_rc agc_digest(agc_ctx *ctx, const agc_digest_request *req, agc_digest_response *resp);
 
 /* --------------------------------------------------------------------------
  * Xof -- extendable output
  * -------------------------------------------------------------------------- */
 
 typedef struct agc_xof_request {
-    size_t                struct_size;
-    const agc_scope_spec *scope_spec;           /* hash scope, XOF variant */
-    const char           *template_id;
-    agc_slice             data;
-    uint32_t              output_length_bytes;  /* REQUIRED */
-    const char           *policy_name;
-    agc_kv_list           user_context;
+    size_t                          struct_size;
+    agc_hash_scope_spec             scope_spec;             /* REQUIRED */
+    const char                      *template_id;           /* optional; NULL => policy selects */
+    const char                      *provider_id;           /* optional; NULL => policy selects */
+    agc_kv_list                     provider_configuration; /* may be empty */
+    const agc_provider_requirements *provider_requirements; /* NULL => no filter */
+    agc_slice                       data;
+    uint32_t                        output_length_bytes;    /* REQUIRED; resp->output must hold this many */
+    const char                      *policy_name;           /* REQUIRED - policy governing the operation */
+    agc_kv_list                     user_context;
 } agc_xof_request;
 
-AGC_API agc_rc agc_xof(agc_ctx *ctx, const agc_xof_request *req,
-                       agc_buf out, size_t *out_len, agc_metadata **out_md);
+AGC_API agc_rc agc_xof(agc_ctx *ctx, const agc_xof_request *req, agc_digest_response *resp);
 
 /* --------------------------------------------------------------------------
  * Random
  * -------------------------------------------------------------------------- */
 
 typedef struct agc_random_request {
-    size_t      struct_size;
-    uint32_t    num_bytes;      /* REQUIRED */
-    const char *provider_id;    /* NULL => default RNG provider */
-    const char *policy_name;    /* optional: governs which RNGs are permitted */
-    agc_kv_list user_context;
+    size_t                          struct_size;
+    uint32_t                        num_bytes;              /* REQUIRED */
+    const char                      *provider_id;           /* optional; NULL => policy selects */
+    agc_kv_list                     provider_configuration; /* may be empty */
+    const agc_provider_requirements *provider_requirements; /* NULL => no filter */
+    const char                      *policy_name;           /* optional: governs which RNGs are permitted */
+    agc_kv_list                     user_context;
 } agc_random_request;
 
-/* Unlike every other output in this API, the random buffer is exactly
- * num_bytes; no size query is needed and out.cap must be >= num_bytes.
- * out_provider_id (optional) receives the provider that actually served it
- * ("stub" in this build), which matters for FIPS evidence in a real one. */
-AGC_API agc_rc agc_generate_random(agc_ctx *ctx, const agc_random_request *req,
-                                   agc_buf out, const char **out_provider_id,
-                                   agc_metadata **out_md);
+/* Size query for storage: if storage is NULL or too small, returns AGC_ERR_BUFFER_TOO_SMALL and sets storage_used to the required size. */
+typedef struct agc_random_response {
+    size_t   struct_size;
+    agc_buf  output;                               /* IN: caller region, cap >= num_bytes. OUT: exactly num_bytes */
+    size_t   output_len;                           /* == req->num_bytes on success */
+    char     api_version[AGC_API_VERSION_MAX_LEN]; /* OUT: NUL-terminated version of the library that produced it */
+    char     *provider_id;                         /* OUT: NUL-terminated id of the provider that served it;
+                                                      matters for FIPS evidence; 
+                                                      If provided by the request, points to the request's provider_id; 
+                                                      otherwise, lives in the response's storage */
+    uint32_t policy_version;                       /* OUT: version of the policy that selected the provider/template */
+    agc_buf  storage;                              /* IN: caller region */
+    size_t   storage_used;
+} agc_random_response;
 
-/* Convenience wrapper for the overwhelmingly common case. */
+/* Unlike every other output, the random buffer is exactly num_bytes; the
+ * size query for `output` is therefore never needed. */
+AGC_API agc_rc agc_generate_random(agc_ctx *ctx, const agc_random_request *req,
+                                   agc_random_response *resp);
+
+/* Convenience wrapper for the overwhelmingly common case: `len` bytes from
+ * the default provider into a caller buffer, no metadata. */
 AGC_API agc_rc agc_random_bytes(agc_ctx *ctx, uint8_t *out, size_t len);
 
 typedef struct agc_seed_random_request {
-    size_t      struct_size;
-    agc_slice   seed;
-    const char *provider_id;
-    const char *policy_name;
-    agc_kv_list user_context;
+    size_t       struct_size;
+    agc_slice    seed;           /* borrowed for the call; mixed into a DRBG, never its sole source */
+    const char  *provider_id;
+    const char  *policy_name;
+    agc_kv_list  user_context;
 } agc_seed_random_request;
 
-/* Seed material is meant to be MIXED into a DRBG, never used as its sole
- * source (NIST SP 800-90A §8.7.2). This build's RNG is the OS CSPRNG
- * directly (agc__stub_random(), src/stub/stub_random.c) with no seedable
- * DRBG state of its own to mix into, so it honestly and always declines:
- * AGC_OK with *out_accepted = 0 and an explanatory message -- distinguishing
- * "declined" from "failed", which a plain bool could not. */
+typedef struct agc_seed_random_response {
+    size_t struct_size;
+    int    success;                          /* OUT: 0 = declined, non-zero = mixed in */
+    char   message[AGC_SEED_MESSAGE_MAX];     /* OUT: NUL-terminated explanation if not accepted, may be "" */
+} agc_seed_random_response;
+
+/* A provider with no seedable DRBG state declines: AGC_OK with success = 0
+ * and a message -- "declined" is distinct from "failed". */
 AGC_API agc_rc agc_seed_random(agc_ctx *ctx, const agc_seed_random_request *req,
-                               int *out_accepted, const char **out_message);
+                               agc_seed_random_response *resp);
 
 #ifdef __cplusplus
 }

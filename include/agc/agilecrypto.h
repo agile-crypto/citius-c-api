@@ -30,6 +30,7 @@
 #include "agc_scope.h"
 #include "agc_params.h"
 #include "agc_core.h"
+#include "agc_metadata.h"
 #include "agc_key.h"
 #include "agc_crypto.h"
 #include "agc_stream.h"
