@@ -88,7 +88,8 @@ typedef struct agc_session agc_session;
  * docs/implementation_progress.md) still parse. */
 typedef struct agc_metadata agc_metadata;
 
-/* KeyMetadata: everything ReadKey returns about a key (commit 7). */
+/* KeyMetadata. Caller-allocated struct defined in agc_key.h; forward
+ * declaration kept so headers not yet converted (agc_establish.h) parse. */
 typedef struct agc_key_info agc_key_info;
 
 /* TemplateInfo: one algorithm configuration plus its scoped capabilities
@@ -104,8 +105,8 @@ typedef struct agc_provider_info agc_provider_info;
 /* ProviderInstance: a CONFIGURED provider ready for use (commit 11). */
 typedef struct agc_provider_instance agc_provider_instance;
 
-/* ImplementationProperties: FIPS status, verification, side-channel posture
- * (commit 11). */
+/* ImplementationProperties. Caller-allocated struct defined in agc_key.h;
+ * forward declaration kept so agc_provider.h, not yet converted, parses. */
 typedef struct agc_impl_props agc_impl_props;
 
 /* SecurityGuarantees: formal notions, practical outcomes, operational
@@ -116,12 +117,9 @@ typedef struct agc_security_guarantees agc_security_guarantees;
  * (commit 11). */
 typedef struct agc_policy_decision agc_policy_decision;
 
-/* ValidateKeyOperationResponse: feasibility report for transform/migrate
- * (commit 7). */
+/* ValidateKeyOperationResponse and MigrateKeyResponse detail. Both are
+ * caller-allocated structs defined in agc_key.h. */
 typedef struct agc_feasibility_report agc_feasibility_report;
-
-/* MigrateKeyResponse detail: what happened, plus archived-key info
- * (commit 7). */
 typedef struct agc_migration_report agc_migration_report;
 
 /* Iterator cursors. Each hides paging bookkeeping (D12). */
