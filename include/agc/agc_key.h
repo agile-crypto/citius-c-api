@@ -101,8 +101,9 @@ AGC_API agc_rc agc_update_key_policy(agc_ctx *ctx, const char *key_name, const c
  * MigrateKey
  * -------------------------------------------------------------------------- */
 
-/* Set resp->want_key_info to receive the migrated key's record; the report
- * is always written. resp->storage covers whichever records are requested
+/* Set resp->want_key_info and resp->want_report to choose which records come
+ * back; both are opt-in, so a zeroed response migrates the key and reports
+ * only the return code. resp->storage covers whichever records are requested
  * and is size-checked before the migration is attempted; on
  * AGC_ERR_BUFFER_TOO_SMALL storage_used holds the bound and no key has been
  * touched. */

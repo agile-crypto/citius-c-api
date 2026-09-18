@@ -238,17 +238,21 @@ typedef struct agc_migration_report {
 typedef struct agc_migrate_key_response {
     size_t               struct_size;
 
-    /* IN: set non-zero to receive `key_info`. AGC_INIT leaves it 0, so the
-     * record is opt-in. When 0, key_info is not written and its size is
-     * excluded from storage_used. `report` is always written. */
+    /* IN: set either non-zero to receive that record. AGC_INIT leaves both
+     * 0, so both are opt-in: a zeroed response migrates the key and reports
+     * only the return code, needing no storage at all. A record left
+     * unrequested is not written and its size is excluded from
+     * storage_used. */
     int                  want_key_info;
+    int                  want_report;
 
     /* The key after migration: new provider, and a new version when the
      * strategy rekeyed. Written only when want_key_info is non-zero. */
     agc_key_info         key_info;
 
     /* What the migration actually did. The strategy reported here may differ
-     * from the one requested when the provider could not serve it. */
+     * from the one requested when the provider could not serve it. Written
+     * only when want_report is non-zero. */
     agc_migration_report report;
 
     agc_buf              storage;       /* IN: caller region for the records requested above */
