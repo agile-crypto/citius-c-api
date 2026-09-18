@@ -112,7 +112,7 @@ typedef struct agc_provider_output {
  * agc_metadata_decode(); consumed by agc_metadata_encode(); may also be
  * built by hand for the rare case of synthesising metadata.
  *
- * Everything variable-length -- the bytes behind every p_* pointer of
+ * Everything variable-length -- the bytes behind every pointer of
  * provider_output and the items and strings behind user_context -- lives in
  * `storage`, a region the CALLER OWNS. The struct is valid for as long as
  * `storage` is; nothing in it references the encoded bytes it was decoded
