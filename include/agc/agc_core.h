@@ -103,9 +103,6 @@ typedef struct agc_provider_instance agc_provider_instance;
  * forward declaration kept so agc_provider.h, not yet converted, parses. */
 typedef struct agc_impl_props agc_impl_props;
 
-/* EvaluatePolicyResponse: allow/deny plus reasoning and alternatives
- * (commit 11). */
-typedef struct agc_policy_decision agc_policy_decision;
 
 /* ValidateKeyOperationResponse and MigrateKeyResponse detail. Both are
  * caller-allocated structs defined in agc_key.h. */
