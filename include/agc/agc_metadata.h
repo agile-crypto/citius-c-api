@@ -53,15 +53,15 @@ typedef enum agc_encoding {
 
 /* C projection of ProviderOutput {string encoding; oneof algorithm_output}.
  *
- * Every p_* field is a POINTER INTO THE CALLER'S STORAGE REGION
- * (agc_metadata.storage) when produced by agc_metadata_decode(), and into
- * whatever caller memory the caller chose when the struct is built by hand
- * for agc_metadata_encode(). The library never allocates behind them and
- * never frees them. Exactly one arm of `u` is live, selected by `kind`;
+ * Every agc_slice and agc_kb_list below POINTS INTO THE CALLER'S STORAGE
+ * REGION (agc_metadata.storage) when produced by agc_metadata_decode(), and
+ * into whatever caller memory the caller chose when the struct is built by
+ * hand for agc_metadata_encode(). The library never allocates behind them
+ * and never frees them. Exactly one arm of `u` is live, selected by `kind`;
  * AGC_INIT() leaves the others zero. agc_metadata_decode() never produces a
  * `kind` this header does not name (contract point 7).
  *
- * Pointer arms are a v1 choice (docs/agc_crypto.md); they keep the struct
+ * Slice arms are a v1 choice (docs/agc_crypto.md); they keep the struct
  * size independent of any single algorithm's output length at the cost of
  * requiring storage on every decode. This may change once needs and
  * constraints have been evaluated in use. */
@@ -72,34 +72,27 @@ typedef struct agc_provider_output {
         /* AGC_ALGORITHM_OUTPUT_NO_OUTPUT: no fields. */
 
         struct {
-            const uint8_t *p_nonce;        /* in caller storage */
-            size_t         nonce_len;
-            uint32_t       tag_len;        /* authentication tag length in bytes */
+            agc_slice nonce;      /* data in caller storage */
+            uint32_t  tag_len;    /* authentication tag length in bytes */
         } aead;
 
         struct {
-            const uint8_t *p_iv;           /* in caller storage */
-            size_t         iv_len;
+            agc_slice iv;         /* data in caller storage */
         } block_cipher;
 
         struct {
-            const uint8_t *p_counter_block;   /* in caller storage */
-            size_t         counter_block_len;
-            uint32_t       counter_bits;
+            agc_slice counter_block;  /* data in caller storage */
+            uint32_t  counter_bits;
         } counter_mode;
 
         struct {
-            const uint8_t *p_nonce;           /* in caller storage */
-            size_t         nonce_len;
-            const uint8_t *p_block_counter;   /* in caller storage */
-            size_t         block_counter_len;
+            agc_slice nonce;          /* data in caller storage */
+            agc_slice block_counter;  /* data in caller storage */
         } stream_cipher;
 
         struct {
-            const uint8_t *p_salt;         /* in caller storage */
-            size_t         salt_len;
-            const uint8_t *p_iv;           /* in caller storage */
-            size_t         iv_len;
+            agc_slice salt;       /* data in caller storage */
+            agc_slice iv;         /* data in caller storage */
         } kdf;
 
         struct {
@@ -166,7 +159,7 @@ AGC_API agc_rc agc_metadata_encode(const agc_metadata *md, agc_encoding enc,
  *  3. Scalars are written inline: key_version, api_version,
  *     provider_output.encoding, provider_output.kind.
  *  4. Every variable-length value is COPIED into out->storage, and the
- *     corresponding p_* pointer, user_context.items or vendor.params.items
+ *     corresponding agc_slice, user_context.items or vendor.params.items
  *     is set to point into it: first the agc_kv and agc_kb item arrays
  *     (8-byte aligned), then the NUL-terminated user-context strings and
  *     vendor keys, then the byte values (nonce, IV, salt, counter block,

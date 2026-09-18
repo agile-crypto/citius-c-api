@@ -29,6 +29,7 @@
 #include "agc_types.h"
 #include "agc_scope.h"
 #include "agc_params.h"
+#include "agc_algorithm_params.h"
 #include "agc_core.h"
 #include "agc_metadata.h"
 #include "agc_key_types.h"
@@ -38,6 +39,7 @@
 #include "agc_stream.h"
 #include "agc_establish.h"
 #include "agc_policy.h"
+#include "agc_discovery_types.h"
 #include "agc_discovery.h"
 #include "agc_provider.h"
 

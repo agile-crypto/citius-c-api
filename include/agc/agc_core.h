@@ -91,12 +91,6 @@ typedef struct agc_metadata agc_metadata;
 /* KeyMetadata. Caller-allocated struct defined in agc_key.h; forward
  * declaration kept so headers not yet converted (agc_establish.h) parse. */
 typedef struct agc_key_info agc_key_info;
-
-/* TemplateInfo: one algorithm configuration plus its scoped capabilities
- * (commit 11). */
-typedef struct agc_template_info agc_template_info;
-
-/* ScopeInfo: human-readable description of one scope (commit 11). */
 typedef struct agc_scope_info agc_scope_info;
 
 /* ProviderInfo: a provider TYPE and its capabilities (commit 11). */
@@ -108,10 +102,6 @@ typedef struct agc_provider_instance agc_provider_instance;
 /* ImplementationProperties. Caller-allocated struct defined in agc_key.h;
  * forward declaration kept so agc_provider.h, not yet converted, parses. */
 typedef struct agc_impl_props agc_impl_props;
-
-/* SecurityGuarantees: formal notions, practical outcomes, operational
- * bounds (commit 11). */
-typedef struct agc_security_guarantees agc_security_guarantees;
 
 /* EvaluatePolicyResponse: allow/deny plus reasoning and alternatives
  * (commit 11). */

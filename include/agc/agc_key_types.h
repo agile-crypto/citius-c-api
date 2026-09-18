@@ -80,7 +80,7 @@ typedef struct agc_impl_props {
  * -------------------------------------------------------------------------- */
 
 /* Everything the service knows about one key version. Caller-allocated;
- * see STORAGE CONTRACT. Never contains key material: p_public_key is the
+ * see STORAGE CONTRACT. Never contains key material: `public_key` is the
  * public half of an asymmetric key and nothing else. */
 typedef struct agc_key_info {
     size_t                  struct_size;
@@ -100,11 +100,10 @@ typedef struct agc_key_info {
      * additional_properties items and strings of its arm are in storage. */
     agc_scope_spec          scope_spec;
 
-    /* Public-key material for asymmetric keys.
-     * NULL with public_key_len 0 when the key has none: symmetric keys, or
-     * an asymmetric key whose provider did not surface it. */
-    const uint8_t          *p_public_key;    /* in storage */
-    size_t                  public_key_len;
+    /* Public-key material for asymmetric keys. Empty ({NULL,0}) when the key
+     * has none: symmetric keys, or an asymmetric key whose provider did not
+     * surface it. */
+    agc_slice               public_key;      /* data in storage; empty when the key has none */
     agc_key_format          public_key_format;
 
     /* provider_metadata (map<string, string>): items and strings in storage. */
@@ -316,7 +315,7 @@ typedef struct agc_validate_key_op_response {
     agc_key_state          current_state;
 
     /* StrategyOption list (options, field 2): array in storage. */
-    const agc_strategy_option *p_options;
+    const agc_strategy_option *options;  
     size_t                     option_count;
 
     agc_migration_strategy recommended_strategy;
