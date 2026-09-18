@@ -79,9 +79,13 @@ typedef struct agc_impl_props {
  * KeyMetadata (api/messages/key_management.proto)
  * -------------------------------------------------------------------------- */
 
-/* Everything the service knows about one key version. Caller-allocated;
- * see STORAGE CONTRACT. Never contains key material: `public_key` is the
- * public half of an asymmetric key and nothing else. */
+/* Everything the service knows about one key version. Never contains key
+ * material: `public_key` is the public half of an asymmetric key and nothing
+ * else.
+ *
+ * DESCRIPTIVE ONLY: this record carries no storage of its own. Whenever the
+ * library fills one, the storage lives in the enclosing response and every
+ * pointer below points into that region. */
 typedef struct agc_key_info {
     size_t                  struct_size;
 
@@ -111,10 +115,19 @@ typedef struct agc_key_info {
 
     /* Properties of the implementation serving this key. */
     agc_impl_props          implementation_props;
-
-    agc_buf                 storage;         /* IN: caller region for every variable-length value */
-    size_t                  storage_used;    /* OUT: bytes consumed, or required on AGC_ERR_BUFFER_TOO_SMALL */
 } agc_key_info;
+
+/* The single-key response, shared by every call that returns one
+ * agc_key_info and nothing else: CreateKey, ReadKey, RotateKey,
+ * TransformKey, UpdateKeyPolicy, ImportKey and the ListKeys iterator. It
+ * exists because agc_key_info is descriptive only and needs a region to be
+ * written into; see STORAGE CONTRACT. */
+typedef struct agc_key_info_response {
+    size_t       struct_size;
+    agc_key_info key_info;
+    agc_buf      storage;       /* IN: caller region for the record's strings, key bytes and map */
+    size_t       storage_used;  /* OUT: bytes consumed, or required */
+} agc_key_info_response;
 
 /* --------------------------------------------------------------------------
  * CreateKey
@@ -195,8 +208,10 @@ typedef struct agc_migrate_key_params {
     const char            *template_id;  /* optional explicit algorithm change */
 } agc_migrate_key_params;
 
-/* MigrationResult plus ArchivedKeyInfo. Caller-allocated; see STORAGE
- * CONTRACT. */
+/* MigrationResult plus ArchivedKeyInfo.
+ *
+ * DESCRIPTIVE ONLY: no storage of its own. Its strings live in the enclosing
+ * agc_migrate_key_response's storage. */
 typedef struct agc_migration_report {
     size_t                 struct_size;
     agc_migration_strategy strategy_used;
@@ -216,28 +231,28 @@ typedef struct agc_migration_report {
     const char            *archived_key_name;     /* NUL-terminated, in storage */
     const char            *archived_provider_id;  /* NUL-terminated, in storage */
     agc_timestamp          archived_expiration;
-
-    agc_buf                storage;               /* IN */
-    size_t                 storage_used;          /* OUT */
 } agc_migration_report;
 
-/* MigrateKeyResponse. Caller-allocated. Two records, each with its own
- * storage region so that a caller wanting only one of them pays for only
- * that one: leave the other's storage {NULL,0} to opt out of it entirely,
- * in which case that record is not written and its size is not reported.
- * Opting out of both is legal and reduces the call to "migrate, tell me
- * only whether it worked". */
+/* MigrateKeyResponse. Both records are descriptive, so this response owns
+ * the single storage region they both point into. */
 typedef struct agc_migrate_key_response {
     size_t               struct_size;
 
+    /* IN: set non-zero to receive `key_info`. AGC_INIT leaves it 0, so the
+     * record is opt-in. When 0, key_info is not written and its size is
+     * excluded from storage_used. `report` is always written. */
+    int                  want_key_info;
+
     /* The key after migration: new provider, and a new version when the
-     * strategy rekeyed. Its storage follows the STORAGE CONTRACT. */
+     * strategy rekeyed. Written only when want_key_info is non-zero. */
     agc_key_info         key_info;
 
-    /* What the migration actually did. Its storage follows the STORAGE
-     * CONTRACT. The strategy reported here may differ from the one
-     * requested when the provider could not serve it. */
+    /* What the migration actually did. The strategy reported here may differ
+     * from the one requested when the provider could not serve it. */
     agc_migration_report report;
+
+    agc_buf              storage;       /* IN: caller region for the records requested above */
+    size_t               storage_used;  /* OUT: bytes consumed, or required */
 } agc_migrate_key_response;
 
 /* --------------------------------------------------------------------------
@@ -353,11 +368,18 @@ typedef struct agc_export_key_response {
     agc_key_format  actual_format;   /* OUT: may differ from params->format when the
                                         provider can only serve an equivalent one */
 
-    /* Metadata of the exported key version. Its storage is sized and filled
-     * under the STORAGE CONTRACT; set key_info.storage to {NULL,0} and leave
-     * it there to opt out of the record entirely (key_info is then not
-     * written and its size is not reported). */
+    /* IN: set non-zero to receive `key_info`. AGC_INIT leaves it 0, so the
+     * record is opt-in: a zeroed response asks only for the material and
+     * needs no storage at all. When 0, key_info is not written and its size
+     * is excluded from storage_used. */
+    int             want_key_info;
+
+    /* Metadata of the exported key version; descriptive, so it points into
+     * `storage` below. Written only when want_key_info is non-zero. */
     agc_key_info    key_info;
+
+    agc_buf         storage;       /* IN: caller region for key_info's strings, key bytes and map */
+    size_t          storage_used;  /* OUT: bytes consumed, or required */
 } agc_export_key_response;
 
 typedef struct agc_import_key_params {

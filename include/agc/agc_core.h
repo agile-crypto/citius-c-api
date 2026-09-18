@@ -88,16 +88,8 @@ typedef struct agc_session agc_session;
  * docs/implementation_progress.md) still parse. */
 typedef struct agc_metadata agc_metadata;
 
-/* KeyMetadata. Caller-allocated struct defined in agc_key.h; forward
- * declaration kept so headers not yet converted (agc_establish.h) parse. */
-typedef struct agc_key_info agc_key_info;
 typedef struct agc_scope_info agc_scope_info;
 
-
-/* ValidateKeyOperationResponse and MigrateKeyResponse detail. Both are
- * caller-allocated structs defined in agc_key.h. */
-typedef struct agc_feasibility_report agc_feasibility_report;
-typedef struct agc_migration_report agc_migration_report;
 
 /* Iterator cursors. Each hides paging bookkeeping (D12). */
 typedef struct agc_key_iter               agc_key_iter;

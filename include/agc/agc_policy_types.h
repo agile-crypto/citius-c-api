@@ -102,15 +102,26 @@ typedef struct agc_list_policies_request {
 } agc_list_policies_request;
 
 /* PolicySummary: a lightweight view of one policy. Use agc_read_policy to
- * retrieve the full document. Caller-allocated; see STORAGE CONTRACT. */
+ * retrieve the full document.
+ *
+ * DESCRIPTIVE ONLY: no storage of its own; `name` points into the enclosing
+ * agc_policy_summary_response's storage. */
 typedef struct agc_policy_summary {
     size_t        struct_size;
-    const char   *name;          /* NUL-terminated, in storage */
+    const char   *name;          /* NUL-terminated, in the response's storage */
     agc_timestamp created_at;
     agc_timestamp updated_at;
-    agc_buf       storage;       /* IN: caller region */
-    size_t        storage_used;  /* OUT: bytes consumed, or required */
 } agc_policy_summary;
+
+/* The single-summary response, filled by the ListCryptoPolicies iterator. It
+ * exists because agc_policy_summary is descriptive only and needs a region to
+ * be written into; see STORAGE CONTRACT. */
+typedef struct agc_policy_summary_response {
+    size_t             struct_size;
+    agc_policy_summary summary;
+    agc_buf            storage;       /* IN: caller region */
+    size_t             storage_used;  /* OUT: bytes consumed, or required */
+} agc_policy_summary_response;
 
 /* --------------------------------------------------------------------------
  * Policy evaluation

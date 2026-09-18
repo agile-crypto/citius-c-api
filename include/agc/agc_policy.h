@@ -72,7 +72,7 @@ AGC_API agc_rc agc_list_policies(agc_ctx *ctx, const agc_list_policies_request *
  * cursor does not advance, so the caller may resize out->storage and call
  * again for the same policy. AGC_ERR_ITERATOR_EXHAUSTED at the end. A caller
  * may reuse one record and one storage region across the whole loop. */
-AGC_API agc_rc agc_policy_iter_next(agc_policy_iter *it, agc_policy_summary *out);
+AGC_API agc_rc agc_policy_iter_next(agc_policy_iter *it, agc_policy_summary_response *out);
 AGC_API void   agc_policy_iter_free(agc_policy_iter *it);
 
 /* --------------------------------------------------------------------------

@@ -112,21 +112,28 @@ typedef struct agc_provider_output {
  * agc_metadata_decode(); consumed by agc_metadata_encode(); may also be
  * built by hand for the rare case of synthesising metadata.
  *
- * Everything variable-length -- the bytes behind every pointer of
- * provider_output and the items and strings behind user_context -- lives in
- * `storage`, a region the CALLER OWNS. The struct is valid for as long as
- * `storage` is; nothing in it references the encoded bytes it was decoded
- * from. A by-value copy of the struct shares the same storage. */
+ * DESCRIPTIVE ONLY: this record carries no storage of its own. Everything
+ * variable-length -- the bytes behind every agc_slice of provider_output and
+ * the items and strings behind user_context -- lives in the enclosing
+ * agc_decode_metadata_result's storage when the library fills it, and in
+ * caller memory when the caller builds one by hand. */
 typedef struct agc_metadata {
     size_t              struct_size;                        /* AGC_INIT() sets it */
     uint32_t            key_version;                        /* version of the key that produced the artifact */
     char                api_version[AGC_API_VERSION_MAX_LEN];/* "major.minor", NUL-terminated */
     agc_provider_output provider_output;
-    agc_kv_list         user_context;   /* items array and NUL-terminated strings in caller storage
-                                         * after decode; caller memory when built by hand */
-    agc_buf             storage;        /* IN to decode: caller region for every variable-length value */
-    size_t              storage_used;   /* OUT from decode: bytes of storage consumed, or required */
+    agc_kv_list         user_context;   /* items array and NUL-terminated strings in the result's
+                                         * storage after decode; caller memory when built by hand */
 } agc_metadata;
+
+/* The decode result: the record plus the region it points into. Every
+ * function that produces an agc_metadata fills one of these. */
+typedef struct agc_decode_metadata_result {
+    size_t       struct_size;
+    agc_metadata metadata;
+    agc_buf      storage;       /* IN: caller region for every variable-length value */
+    size_t       storage_used;  /* OUT: bytes consumed, or required */
+} agc_decode_metadata_result;
 
 /* --------------------------------------------------------------------------
  * Codec
@@ -138,7 +145,7 @@ typedef struct agc_metadata {
  * AGC_ERR_BUFFER_TOO_SMALL with *out_len set to the required length and
  * writes nothing; otherwise writes *out_len bytes and returns AGC_OK.
  * Reads md->provider_output and md->user_context through their pointers
- * wherever they live; does not touch md->storage. Fails with
+ * wherever they live. Fails with
  * AGC_ERR_INVALID_ARGUMENT for a value the encoding cannot express (e.g. an
  * api_version that is not "major.minor" with both parts in 0..255, or an
  * encoding token outside {"", "raw", "der", "jws", "cbor"} under WIRE_V1). */
@@ -156,12 +163,13 @@ AGC_API agc_rc agc_metadata_encode(const agc_metadata *md, agc_encoding enc,
  *     canonical form (ascending fields, no duplicates, minimal varints;
  *     docs/representing_metadata.md §4.1). There is no maximum encoded
  *     length. On failure no field of *out is written except as stated in 4.
- *  3. Scalars are written inline: key_version, api_version,
- *     provider_output.encoding, provider_output.kind.
+ *  3. Scalars are written inline into out->metadata: key_version,
+ *     api_version, provider_output.encoding, provider_output.kind.
  *  4. Every variable-length value is COPIED into out->storage, and the
- *     corresponding agc_slice, user_context.items or vendor.params.items
- *     is set to point into it: first the agc_kv and agc_kb item arrays
- *     (8-byte aligned), then the NUL-terminated user-context strings and
+ *     corresponding agc_slice, out->metadata.user_context.items or
+ *     vendor.params.items is set to point into it: first the agc_kv and
+ *     agc_kb item arrays (8-byte aligned), then the NUL-terminated
+ *     user-context strings and
  *     vendor keys, then the byte values (nonce, IV, salt, counter block,
  *     vendor parameter values). out->storage_used receives the bytes
  *     consumed. A VENDOR arm is decoded into agc_kb_list by the vendor
@@ -184,11 +192,13 @@ AGC_API agc_rc agc_metadata_encode(const agc_metadata *md, agc_encoding enc,
  *     format forbids unknown kinds by design (docs/representing_metadata.md
  *     §6). Fail-closed; an older library could not have used the algorithm
  *     anyway. */
-AGC_API agc_rc agc_metadata_decode(agc_encoding enc, agc_slice encoded, agc_metadata *out);
+AGC_API agc_rc agc_metadata_decode(agc_encoding enc, agc_slice encoded,
+                                   agc_decode_metadata_result *out);
 
 /* As agc_metadata_decode, for a body that lacks its encoding byte -- the
  * pair agc_envelope_split() returns. Identical contract otherwise. */
-AGC_API agc_rc agc_metadata_decode_body(agc_encoding enc, agc_slice body, agc_metadata *out);
+AGC_API agc_rc agc_metadata_decode_body(agc_encoding enc, agc_slice body,
+                                        agc_decode_metadata_result *out);
 
 /* Exact number of storage bytes agc_metadata_decode() would require for
  * `encoded` (encoding byte first), computed from its length fields alone.

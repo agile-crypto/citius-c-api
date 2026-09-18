@@ -191,9 +191,11 @@ typedef struct {
  * TemplateInfo (api/types/templates.proto)
  * -------------------------------------------------------------------------- */
 
-/* One algorithm configuration plus its scoped capability. Caller-allocated;
- * see STORAGE CONTRACT. Produced one record at a time by agc_get_template
- * and agc_template_iter_next, so it carries its own storage region. */
+/* One algorithm configuration plus its scoped capability.
+ *
+ * DESCRIPTIVE ONLY: this record carries no storage of its own. Whenever the
+ * library fills one, the storage lives in the enclosing
+ * agc_template_info_response and every pointer below points into it. */
 typedef struct agc_template_info {
     size_t                         struct_size;
 
@@ -230,10 +232,17 @@ typedef struct agc_template_info {
      * has_security_guarantees is 0 when the catalog published none. */
     int                            has_security_guarantees;
     agc_security_guarantees        security_guarantees;
-
-    agc_buf                        storage;       /* IN: caller region for every variable-length value */
-    size_t                         storage_used;  /* OUT: bytes consumed, or required on AGC_ERR_BUFFER_TOO_SMALL */
 } agc_template_info;
+
+/* The single-template response, shared by agc_get_template and the
+ * ListTemplates iterator. It exists because agc_template_info is descriptive
+ * only and needs a region to be written into; see STORAGE CONTRACT. */
+typedef struct agc_template_info_response {
+    size_t            struct_size;
+    agc_template_info template_info;
+    agc_buf           storage;       /* IN: caller region for every variable-length value */
+    size_t            storage_used;  /* OUT: bytes consumed, or required */
+} agc_template_info_response;
 
 /* --------------------------------------------------------------------------
  * ListScopes -- no request fields, a bounded ~dozen-entry result set, so a

@@ -41,11 +41,11 @@ extern "C" {
  * -------------------------------------------------------------------------- */
 
 /* CreateKeyResponse has 5 fields; success/message collapse into agc_rc (D4).
- * implementation_properties is out_key->implementation_props.
+ * implementation_properties is resp->key_info.implementation_props.
  * security_guarantees is not exposed by this reconciliation: it is reachable
  * via the key's template, never duplicated. */
 AGC_API agc_rc agc_create_key(agc_ctx *ctx, const agc_create_key_params *params,
-                               agc_key_info *out_key);
+                               agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * ReadKey / ListKeys
@@ -54,7 +54,7 @@ AGC_API agc_rc agc_create_key(agc_ctx *ctx, const agc_create_key_params *params,
 /* version == 0 reads the latest (proto: optional uint32 version, absent =
  * latest; versions start at 1, so 0 is an unambiguous sentinel). */
 AGC_API agc_rc agc_read_key(agc_ctx *ctx, const char *key_name, uint32_t version,
-                             agc_key_info *out_key);
+                             agc_key_info_response *resp);
 
 /* The iterator is a library-owned handle (it has a lifecycle: paging
  * bookkeeping, D12); the records it yields are caller-allocated. */
@@ -65,7 +65,7 @@ AGC_API agc_rc agc_list_keys(agc_ctx *ctx, const agc_list_keys_params *params,
  * not advance, so the caller may resize out->storage and call again for the
  * same key. AGC_ERR_ITERATOR_EXHAUSTED at the end. A caller may reuse one
  * record and one storage region across the whole loop. */
-AGC_API agc_rc agc_key_iter_next(agc_key_iter *it, agc_key_info *out);
+AGC_API agc_rc agc_key_iter_next(agc_key_iter *it, agc_key_info_response *out);
 AGC_API void   agc_key_iter_free(agc_key_iter *it);
 
 /* --------------------------------------------------------------------------
@@ -80,31 +80,32 @@ AGC_API agc_rc agc_delete_key(agc_ctx *ctx, const char *key_name);
  * -------------------------------------------------------------------------- */
 
 /* RotateKeyRequest is `{name}` on the wire.
- * *out_new_key describes the new version's metadata. */
-AGC_API agc_rc agc_rotate_key(agc_ctx *ctx, const char *key_name, agc_key_info *out_new_key);
+ * *resp describes the new version's metadata. */
+AGC_API agc_rc agc_rotate_key(agc_ctx *ctx, const char *key_name, agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * TransformKey
  * -------------------------------------------------------------------------- */
 
 AGC_API agc_rc agc_transform_key(agc_ctx *ctx, const agc_transform_key_params *params,
-                                  agc_key_info *out_key);
+                                  agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * UpdateKeyPolicy
  * -------------------------------------------------------------------------- */
 
 AGC_API agc_rc agc_update_key_policy(agc_ctx *ctx, const char *key_name, const char *new_policy_name,
-                                      agc_key_info *out_key);
+                                      agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * MigrateKey
  * -------------------------------------------------------------------------- */
 
-/* Both records of *resp are size-checked before the migration is attempted;
- * on AGC_ERR_BUFFER_TOO_SMALL each requested record's storage_used holds its
- * bound and no key has been touched. Leave a record's storage {NULL,0} to
- * opt out of it. */
+/* Set resp->want_key_info to receive the migrated key's record; the report
+ * is always written. resp->storage covers whichever records are requested
+ * and is size-checked before the migration is attempted; on
+ * AGC_ERR_BUFFER_TOO_SMALL storage_used holds the bound and no key has been
+ * touched. */
 AGC_API agc_rc agc_migrate_key(agc_ctx *ctx, const agc_migrate_key_params *params,
                                 agc_migrate_key_response *resp);
 
@@ -122,15 +123,17 @@ AGC_API agc_rc agc_validate_key_operation(agc_ctx *ctx, const agc_validate_key_o
 
 /* SECURITY: the caller owns the exported material and MUST agc_secure_zero
  * it -- the library cannot know when the caller is finished with it, which
- * is precisely why the buffer is caller-owned. Both resp->material and
- * resp->key_info.storage (when requested) are size-checked before any
- * material is produced; on AGC_ERR_BUFFER_TOO_SMALL every length field is
- * set and no material has left the provider. */
+ * is precisely why the buffer is caller-owned. Set resp->want_key_info to
+ * receive the key's record as well; left zero, the call returns only the
+ * material and needs no storage. Both resp->material and resp->storage are
+ * size-checked before any material is produced; on
+ * AGC_ERR_BUFFER_TOO_SMALL every length field is set and no material has
+ * left the provider. */
 AGC_API agc_rc agc_export_key(agc_ctx *ctx, const agc_export_key_params *params,
                                agc_export_key_response *resp);
 
 AGC_API agc_rc agc_import_key(agc_ctx *ctx, const agc_import_key_params *params,
-                               agc_key_info *out_key);
+                               agc_key_info_response *resp);
 
 #ifdef __cplusplus
 }

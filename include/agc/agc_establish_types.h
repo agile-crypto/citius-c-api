@@ -37,11 +37,10 @@
  *
  * VARIABLE-LENGTH OUTPUTS
  * -----------------------
- * The key record each response carries is an agc_key_info, whose strings,
- * public key and provider-metadata map live in ITS OWN `storage` region
- * under the STORAGE CONTRACT of agc_key_types.h. Leave that storage
- * {NULL,0} to opt out of the record entirely: it is then not written and its
- * size is not reported, and the call still creates the key.
+ * The key record each response carries is an agc_key_info, which is
+ * descriptive and has no storage of its own: its strings, public key and
+ * provider-metadata map live in the RESPONSE's `storage` region, under the
+ * STORAGE CONTRACT of agc_key_types.h.
  */
 
 #ifndef AGC_ESTABLISH_TYPES_H
@@ -67,16 +66,15 @@ extern "C" {
 
 typedef struct agc_establish_key_response {
     size_t       struct_size;
-
-    /* The key this operation created. Its storage follows the STORAGE
-     * CONTRACT of agc_key_types.h; leave key_info.storage {NULL,0} to opt
-     * out of the record. Projects the proto's `key_metadata` field; see
-     * docs/divergence_c_vs_proto.md for the pending rename. */
-    agc_key_info key_info;
+     /* docs/divergence_c_vs_proto.md for the pending rename. */
+    agc_key_info key_info; /* pointers' values live in `storage` below */
 
     agc_buf      metadata;      /* IN: caller region. OUT: encoded OperationMetadata, encoding byte first */
     size_t       metadata_len;
     uint32_t     key_version;   /* copy of the key_version inside `metadata` */
+
+    agc_buf      storage;       /* IN: caller region for key_info's strings, key bytes and map */
+    size_t       storage_used;  /* OUT: bytes consumed, or required */
 } agc_establish_key_response;
 
 /* --------------------------------------------------------------------------
@@ -179,13 +177,15 @@ typedef struct agc_encapsulate_key_response {
     agc_buf      ciphertext;    /* IN: caller region. OUT: the KEM encapsulation */
     size_t       ciphertext_len;
 
-    /* The shared-secret key this operation created. Storage per the STORAGE
-     * CONTRACT; leave key_info.storage {NULL,0} to opt out of the record. */
+    /* The shared-secret key this operation created */
     agc_key_info key_info;
 
     agc_buf      metadata;      /* IN: caller region. OUT: encoded metadata, encoding byte first */
     size_t       metadata_len;
     uint32_t     key_version;   /* copy of the key_version inside `metadata` */
+
+    agc_buf      storage;       /* IN: caller region for key_info's strings, key bytes and map */
+    size_t       storage_used;  /* OUT: bytes consumed, or required */
 } agc_encapsulate_key_response;
 
 typedef struct agc_decapsulate_key_request {

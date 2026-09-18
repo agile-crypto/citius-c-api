@@ -40,11 +40,11 @@ AGC_API agc_rc agc_list_templates(agc_ctx *ctx, const agc_list_templates_params 
  * does not advance, so the caller may resize out->storage and call again for
  * the same template. AGC_ERR_ITERATOR_EXHAUSTED at the end. A caller may
  * reuse one record and one storage region across the whole loop. */
-AGC_API agc_rc agc_template_iter_next(agc_template_iter *it, agc_template_info *out);
+AGC_API agc_rc agc_template_iter_next(agc_template_iter *it, agc_template_info_response *out);
 AGC_API void   agc_template_iter_free(agc_template_iter *it);
 
 AGC_API agc_rc agc_get_template(agc_ctx *ctx, const char *template_id,
-                                 agc_template_info *out_template);
+                                 agc_template_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * ListScopes

@@ -542,11 +542,10 @@ typedef struct agc_vendor_algorithm_entry {
  * vendor-supplied JSON or YAML file at startup. Templates then reference
  * these through CustomAlgorithm.
  *
- * Unlike every other struct in this header, a registry is a standalone
- * document rather than a member of agc_template_info, so it carries its own
- * `storage` region under the STORAGE CONTRACT of agc_key_types.h. No
- * function in the current C surface produces or consumes one; it is declared
- * for completeness against the proto. */
+ * DESCRIPTIVE ONLY: no storage of its own. No function in the current C
+ * surface produces or consumes one; it is declared for completeness against
+ * the proto. Whichever call eventually returns one must supply the storage
+ * its pointers reference, as every other response does. */
 typedef struct agc_vendor_algorithm_registry {
     size_t                            struct_size;
     const char                       *vendor_id;    /* NUL-terminated, in storage; REQUIRED, 1..64;
@@ -557,8 +556,6 @@ typedef struct agc_vendor_algorithm_registry {
     const char                       *version;      /* NUL-terminated, in storage; semver recommended */
     const char                       *description;  /* NUL-terminated, in storage; at most 2048 */
     const char                       *support_url;  /* NUL-terminated, in storage; at most 512 */
-    agc_buf                           storage;      /* IN: caller region for every variable-length value */
-    size_t                            storage_used; /* OUT: bytes consumed, or required */
 } agc_vendor_algorithm_registry;
 
 /* ==========================================================================
