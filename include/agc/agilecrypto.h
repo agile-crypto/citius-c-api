@@ -37,6 +37,7 @@
 #include "agc_crypto_types.h"
 #include "agc_crypto.h"
 #include "agc_stream.h"
+#include "agc_establish_types.h"
 #include "agc_establish.h"
 #include "agc_policy.h"
 #include "agc_discovery_types.h"
