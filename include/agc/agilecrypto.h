@@ -43,6 +43,7 @@
 #include "agc_policy.h"
 #include "agc_discovery_types.h"
 #include "agc_discovery.h"
+#include "agc_provider_types.h"
 #include "agc_provider.h"
 
 #endif /* AGILECRYPTO_H */

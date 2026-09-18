@@ -93,16 +93,6 @@ typedef struct agc_metadata agc_metadata;
 typedef struct agc_key_info agc_key_info;
 typedef struct agc_scope_info agc_scope_info;
 
-/* ProviderInfo: a provider TYPE and its capabilities (commit 11). */
-typedef struct agc_provider_info agc_provider_info;
-
-/* ProviderInstance: a CONFIGURED provider ready for use (commit 11). */
-typedef struct agc_provider_instance agc_provider_instance;
-
-/* ImplementationProperties. Caller-allocated struct defined in agc_key.h;
- * forward declaration kept so agc_provider.h, not yet converted, parses. */
-typedef struct agc_impl_props agc_impl_props;
-
 
 /* ValidateKeyOperationResponse and MigrateKeyResponse detail. Both are
  * caller-allocated structs defined in agc_key.h. */
