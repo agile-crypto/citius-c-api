@@ -7,10 +7,53 @@
  * peer_public_key_format field (an earlier draft of this reconciliation
  * invented one).
  *
- * Keys acting on keys. Every function here produces a NEW NAMED KEY in the
- * key store; none return key material. That is the invariant that makes the
- * whole surface safe to expose from C: there is no buffer for a caller to
- * leak, forget to zeroize, or accidentally log.
+ * Keys acting on keys. Five of the six functions produce a NEW NAMED KEY in
+ * the key store, and none returns plaintext key material. That is the
+ * invariant that makes the whole surface safe to expose from C: there is no
+ * secret buffer for a caller to leak, forget to zeroize, or accidentally
+ * log. The two byte outputs here -- the wrapped blob and the KEM
+ * encapsulation -- are ciphertext, meant to be transported.
+ *
+ * SHAPE OF EVERY CALL
+ * -------------------
+ *     agc_rc agc_<op>(agc_ctx *ctx, const agc_<op>_request *req, agc_<op>_response *resp);
+ *
+ * One request struct, one response struct, both CALLER-ALLOCATED, both
+ * beginning with struct_size (AGC_INIT). The library writes only into
+ * regions the caller placed in the response; it allocates nothing the caller
+ * sees and there is nothing to free. Rules: docs/agc_crypto.md.
+ *
+ * SIZE QUERIES
+ * ------------
+ * Every output region in a response is an agc_buf plus a length. If ANY
+ * output region has data == NULL, or is present but too small, the call
+ * returns AGC_ERR_BUFFER_TOO_SMALL with EVERY *_len field of the response
+ * set to its requirement, having performed no provider work and created no
+ * key. One retry therefore always suffices, and no key is ever created that
+ * the caller cannot read back. Because these operations mutate the key
+ * store, the requirement reported for an embedded agc_key_info.storage is an
+ * upper bound computed before the operation runs, exactly as in
+ * agc_key_types.h's STORAGE CONTRACT; the real call may consume less.
+ *
+ * METADATA
+ * --------
+ * Every operation returns its OperationMetadata ENCODED in
+ * req->metadata_encoding, encoding byte first, into resp->metadata, plus
+ * resp->key_version as a scalar copy of the value inside -- the same
+ * contract as agc_crypto.h. Metadata is never projected here. An operation
+ * that CONSUMES metadata takes it as an agc_slice of those same bytes; the
+ * encoding is read from byte 0.
+ *
+ * VARIABLE-LENGTH OUTPUTS
+ * -----------------------
+ * The key record each response carries is an agc_key_info, whose strings,
+ * public key and provider-metadata map live in ITS OWN `storage` region
+ * under the STORAGE CONTRACT of agc_key_types.h. Leave that storage
+ * {NULL,0} to opt out of the record entirely: it is then not written and its
+ * size is not reported, and the call still creates the key.
+ *
+ * STATUS: declarations only. Implementation follows; see
+ * docs/implementation_progress.md.
  */
 
 #ifndef AGC_ESTABLISH_H
@@ -18,45 +61,80 @@
 
 #include "agc_core.h"
 #include "agc_params.h"
+#include "agc_metadata.h"
+#include "agc_key_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* --------------------------------------------------------------------------
+ * Shared response: a new named key plus the operation's metadata
+ *
+ * Used by UnwrapKey, DeriveKey, KeyAgreement and DecapsulateKey, whose
+ * outputs are identical in shape. WrapKey and EncapsulateKey have their own
+ * response types because they also emit bytes.
+ * -------------------------------------------------------------------------- */
+
+typedef struct agc_establish_key_response {
+    size_t       struct_size;
+
+    /* The key this operation created. Its storage follows the STORAGE
+     * CONTRACT of agc_key_types.h; leave key_info.storage {NULL,0} to opt
+     * out of the record. */
+    agc_key_info key_info;
+
+    agc_buf      metadata;      /* IN: caller region. OUT: encoded OperationMetadata, encoding byte first */
+    size_t       metadata_len;
+    uint32_t     key_version;   /* copy of the key_version inside `metadata` */
+} agc_establish_key_response;
+
+/* --------------------------------------------------------------------------
  * WrapKey / UnwrapKey (key transport)
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_wrap_key_params {
+typedef struct agc_wrap_key_request {
     size_t                 struct_size;
     const char            *key_to_wrap_name;   /* REQUIRED */
     const char            *wrapping_key_name;  /* REQUIRED -- the KEK */
     agc_wrap_format        format;             /* REQUIRED */
     const agc_wrap_params *params;             /* REQUIRED -- the oneof is required */
-    agc_kv_list            user_context;
-} agc_wrap_key_params;
+    agc_kv_list            user_context;       /* borrowed for the call; echoed into the metadata */
+    agc_encoding           metadata_encoding;  /* REQUIRED; UNSPECIFIED is rejected */
+} agc_wrap_key_request;
 
-/* The wrapped blob is the one output in this header that IS bytes -- it is
- * ciphertext and must be transportable. Two-call convention. */
-AGC_API agc_rc agc_wrap_key(agc_ctx *ctx, const agc_wrap_key_params *p,
-                             agc_buf out_wrapped, size_t *out_len, agc_metadata **out_md);
+/* WrapKey creates no key, so this response carries no agc_key_info: it
+ * carries the wrapped blob, which is ciphertext and must be transportable. */
+typedef struct agc_wrap_key_response {
+    size_t   struct_size;
+    agc_buf  wrapped_key;       /* IN: caller region. OUT: the wrapped blob */
+    size_t   wrapped_key_len;
+    agc_buf  metadata;          /* IN: caller region. OUT: encoded metadata, encoding byte first */
+    size_t   metadata_len;
+    uint32_t key_version;       /* the KEK version used; copy of the value inside `metadata` */
+} agc_wrap_key_response;
 
-typedef struct agc_unwrap_key_params {
+AGC_API agc_rc agc_wrap_key(agc_ctx *ctx, const agc_wrap_key_request *req,
+                             agc_wrap_key_response *resp);
+
+typedef struct agc_unwrap_key_request {
     size_t                 struct_size;
-    agc_slice               wrapped_key;               /* REQUIRED */
-    const char             *wrapping_key_name;         /* REQUIRED -- the KEK */
-    const char             *unwrapped_key_name;        /* REQUIRED -- name for the result */
-    const char             *unwrapped_key_template_id;
-    agc_wrap_format         format;                    /* REQUIRED -- must match wrapping */
-    const agc_metadata     *metadata;                  /* REQUIRED -- from the wrap call */
-    const agc_wrap_params  *params;                    /* REQUIRED -- must match wrapping */
-    agc_kv_list             user_context;
-} agc_unwrap_key_params;
+    agc_slice              wrapped_key;               /* REQUIRED -- borrowed for the call */
+    const char            *wrapping_key_name;         /* REQUIRED -- the KEK */
+    const char            *unwrapped_key_name;        /* REQUIRED -- name for the result */
+    const char            *unwrapped_key_template_id; /* NULL => policy selects */
+    agc_wrap_format        format;                    /* REQUIRED -- must match wrapping */
+    agc_slice              metadata;                  /* REQUIRED -- encoded, encoding byte first,
+                                                         from the wrap call */
+    const agc_wrap_params *params;                    /* REQUIRED -- must match wrapping */
+    agc_kv_list            user_context;
+    agc_encoding           metadata_encoding;         /* REQUIRED -- encoding of resp->metadata */
+} agc_unwrap_key_request;
 
-/* The unwrapped key is recorded with origin = AGC_KEY_ORIGIN_UNWRAPPED
- * (commit 11, once agc_key_info exposes origin). */
-AGC_API agc_rc agc_unwrap_key(agc_ctx *ctx, const agc_unwrap_key_params *p,
-                               agc_key_info **out_key, agc_metadata **out_md);
+/* The unwrapped key is recorded with origin = AGC_KEY_ORIGIN_UNWRAPPED.
+ * Fills an agc_establish_key_response. */
+AGC_API agc_rc agc_unwrap_key(agc_ctx *ctx, const agc_unwrap_key_request *req,
+                               agc_establish_key_response *resp);
 
 /* --------------------------------------------------------------------------
  * DeriveKey (key derivation)
@@ -68,73 +146,93 @@ AGC_API agc_rc agc_unwrap_key(agc_ctx *ctx, const agc_unwrap_key_params *p,
  * because that is what keeps material inside one security domain.
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_derive_key_params {
+typedef struct agc_derive_key_request {
     size_t                struct_size;
-    const char           *base_key_name;     /* REQUIRED; must allow DERIVE_KEY */
-    const char           *derived_key_name;  /* REQUIRED; unique */
-    const char           *policy;            /* NULL => inherit the base key's policy */
-    const agc_kdf_params *params;            /* REQUIRED -- must match the base key's KDF */
+    const char           *base_key_name;      /* REQUIRED; must allow DERIVE_KEY */
+    const char           *derived_key_name;   /* REQUIRED; unique */
+    const char           *policy_name;        /* NULL or "" => inherit the base key's policy */
+    const agc_kdf_params *params;             /* REQUIRED -- must match the base key's KDF */
     agc_kv_list           user_context;
-} agc_derive_key_params;
+    agc_encoding          metadata_encoding;  /* REQUIRED */
+} agc_derive_key_request;
 
-AGC_API agc_rc agc_derive_key(agc_ctx *ctx, const agc_derive_key_params *p,
-                               agc_key_info **out_key, agc_metadata **out_md);
+AGC_API agc_rc agc_derive_key(agc_ctx *ctx, const agc_derive_key_request *req,
+                               agc_establish_key_response *resp);
 
 /* --------------------------------------------------------------------------
  * KeyAgreement (two-party Diffie-Hellman family)
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_key_agreement_params {
+typedef struct agc_key_agreement_request {
     size_t                struct_size;
     const char           *private_key_name;          /* REQUIRED -- our side */
-    agc_slice             peer_public_key;            /* REQUIRED -- their side, algorithm-native raw encoding */
-    const char           *shared_secret_name;         /* REQUIRED -- name for the result */
-    const char           *shared_secret_template_id;  /* NULL => policy selects */
-    const agc_kdf_params *params;                     /* REQUIRED: ECDH / X942_DH / X3DH / VENDOR only */
+    agc_slice             peer_public_key;           /* REQUIRED -- their side, algorithm-native raw
+                                                        encoding; borrowed for the call */
+    const char           *shared_secret_name;        /* REQUIRED -- name for the result */
+    const char           *shared_secret_template_id; /* NULL => policy selects */
+    const agc_agreement_params *params;              /* REQUIRED -- the oneof is required */
     agc_kv_list           user_context;
-} agc_key_agreement_params;
+    agc_encoding          metadata_encoding;         /* REQUIRED */
+} agc_key_agreement_request;
 
-/* Shares agc_kdf_params with agc_derive_key because the proto's
- * agreement_params oneof (Ecdh/X942Dh/X3dh/Vendor) is a strict subset of the
- * kdf_params oneof (11 arms). The library rejects a params->kind outside
- * that subset with AGC_ERR_CRYPTO_INCOMPATIBLE_PARAMETERS rather than
- * duplicating a near-identical union type -- one source of truth, checked
- * at runtime instead of compile time. */
-AGC_API agc_rc agc_key_agreement(agc_ctx *ctx, const agc_key_agreement_params *p,
-                                  agc_key_info **out_key, agc_metadata **out_md);
+/* Takes agc_agreement_params, not agc_kdf_params: the proto's
+ * agreement_params oneof has four arms (Ecdh/X942Dh/X3dh/Vendor) where
+ * kdf_params has eleven, and a dedicated union makes that subset a
+ * compile-time fact rather than a runtime AGC_ERR_CRYPTO_INCOMPATIBLE_PARAMETERS. */
+AGC_API agc_rc agc_key_agreement(agc_ctx *ctx, const agc_key_agreement_request *req,
+                                  agc_establish_key_response *resp);
 
 /* --------------------------------------------------------------------------
  * EncapsulateKey / DecapsulateKey (post-quantum KEMs)
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_encapsulate_params {
-    size_t      struct_size;
-    const char *recipient_public_key_name;  /* REQUIRED; must allow ENCAPSULATE */
-    const char *shared_secret_name;         /* REQUIRED -- name for the result */
-    const char *shared_secret_template_id;  /* NULL => policy selects */
-    agc_kv_list user_context;
-} agc_encapsulate_params;
+typedef struct agc_encapsulate_key_request {
+    size_t       struct_size;
+    const char  *recipient_public_key_name;  /* REQUIRED; must allow ENCAPSULATE */
+    const char  *shared_secret_name;         /* REQUIRED -- name for the result */
+    const char  *shared_secret_template_id;  /* NULL => policy selects */
+    agc_kv_list  user_context;
+    agc_encoding metadata_encoding;          /* REQUIRED */
+} agc_encapsulate_key_request;
 
-/* out_ciphertext is the KEM encapsulation, to be sent to the peer alongside
- * the encoded metadata. The KEM algorithm is deliberately NOT carried in
- * either: metadata is unauthenticated, so the decapsulating side resolves
- * the algorithm from its own private key's template. */
-AGC_API agc_rc agc_encapsulate_key(agc_ctx *ctx, const agc_encapsulate_params *p,
-                                    agc_buf out_ciphertext, size_t *out_len,
-                                    agc_key_info **out_key, agc_metadata **out_md);
+/* EncapsulateKey both creates a key and emits bytes, so it has its own
+ * response type: the shared-secret record plus the KEM encapsulation.
+ *
+ * `ciphertext` is sent to the peer alongside the encoded metadata. The KEM
+ * algorithm is deliberately NOT carried in either: metadata is
+ * unauthenticated, so the decapsulating side resolves the algorithm from its
+ * own private key's template. */
+typedef struct agc_encapsulate_key_response {
+    size_t       struct_size;
+    agc_buf      ciphertext;    /* IN: caller region. OUT: the KEM encapsulation */
+    size_t       ciphertext_len;
 
-typedef struct agc_decapsulate_params {
-    size_t               struct_size;
-    const char          *private_key_name;          /* REQUIRED; must allow DECAPSULATE */
-    agc_slice            ciphertext;                 /* REQUIRED */
-    const char          *shared_secret_name;         /* REQUIRED */
-    const char          *shared_secret_template_id;
-    const agc_metadata  *metadata;                   /* relayed from encapsulation */
-    agc_kv_list          user_context;
-} agc_decapsulate_params;
+    /* The shared-secret key this operation created. Storage per the STORAGE
+     * CONTRACT; leave key_info.storage {NULL,0} to opt out of the record. */
+    agc_key_info key_info;
 
-AGC_API agc_rc agc_decapsulate_key(agc_ctx *ctx, const agc_decapsulate_params *p,
-                                    agc_key_info **out_key, agc_metadata **out_md);
+    agc_buf      metadata;      /* IN: caller region. OUT: encoded metadata, encoding byte first */
+    size_t       metadata_len;
+    uint32_t     key_version;   /* copy of the key_version inside `metadata` */
+} agc_encapsulate_key_response;
+
+AGC_API agc_rc agc_encapsulate_key(agc_ctx *ctx, const agc_encapsulate_key_request *req,
+                                    agc_encapsulate_key_response *resp);
+
+typedef struct agc_decapsulate_key_request {
+    size_t       struct_size;
+    const char  *private_key_name;          /* REQUIRED; must allow DECAPSULATE */
+    agc_slice    ciphertext;                /* REQUIRED -- the peer's encapsulation, borrowed */
+    const char  *shared_secret_name;        /* REQUIRED -- name for the result */
+    const char  *shared_secret_template_id; /* NULL => policy selects */
+    agc_slice    metadata;                  /* encoded, encoding byte first; relayed from
+                                               encapsulation. {NULL,0} if the peer sent none */
+    agc_kv_list  user_context;
+    agc_encoding metadata_encoding;         /* REQUIRED -- encoding of resp->metadata */
+} agc_decapsulate_key_request;
+
+AGC_API agc_rc agc_decapsulate_key(agc_ctx *ctx, const agc_decapsulate_key_request *req,
+                                    agc_establish_key_response *resp);
 
 #ifdef __cplusplus
 }

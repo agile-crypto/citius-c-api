@@ -3,24 +3,31 @@
  * agc_params.h — Abstract Cryptographic API, C binding: operation-time
  * parameters (api/types/operation_params.proto).
  *
- * HAND-WRITTEN. Each proto `oneof scope_params`/`kdf_params` becomes one
- * tagged union type here. Two different tagging conventions are in play, and
- * mixing them up is a real correctness bug, not a style choice:
+ * HAND-WRITTEN. Each proto `oneof` becomes one tagged union type here, per
+ * the rule in docs/harness_suggestions.md: a union plus a `kind` enum whose
+ * values ARE the proto field numbers of the arms. That rule holds wherever a
+ * oneof appears in exactly ONE enclosing message. Two tagging conventions are
+ * therefore in play, and mixing them up is a real correctness bug, not a
+ * style choice:
  *
- *   - agc_custom_params_kind: tags ARE the proto field numbers (10, 11) of
- *     CustomOperationParams.params, verified by
- *     conformance/tier1c_oneof_tags.py.
+ *   - Tags ARE the proto field numbers, and the harness check enforces it:
+ *       agc_custom_params_kind   -- CustomOperationParams.params (10, 11)
+ *       agc_kdf_params_kind      -- DeriveKeyRequest.kdf_params (5..15)
+ *       agc_agreement_params_kind -- KeyAgreementRequest.agreement_params (5..8)
+ *     Each of those oneofs occurs in exactly one message, so a field number
+ *     is a stable discriminant.
  *
- *   - The five request-level unions below (encrypt/sign/mac/wrap/kdf params):
- *     tags are an INDEPENDENT enum, NOT proto field numbers, because the same
- *     conceptual arm carries a DIFFERENT field number in each enclosing
- *     message. Concretely: aead_params is field 4 in EncryptRequest, field 5
- *     in DecryptRequest, and field 4 again in EncryptInitRequest; no_context
- *     is field 3 in SignRequest but field 5 in VerifyRequest. A field number
- *     therefore cannot serve as a stable discriminant for these five, so the
- *     marshalling layer (commits 7-10) maps the independent tag to the
- *     correct per-message field number itself. Stated here so nobody later
- *     "fixes" these to look like agc_scope_kind.
+ *   - The four scope_params unions below (encrypt/sign/mac/wrap): tags are an
+ *     INDEPENDENT enum, NOT proto field numbers, because `oneof scope_params`
+ *     occurs in twenty different messages and the same conceptual arm carries
+ *     a DIFFERENT field number in each. Concretely: aead_params is field 4 in
+ *     EncryptRequest, field 5 in DecryptRequest, and field 4 again in
+ *     EncryptInitRequest; no_context is field 3 in SignRequest but field 5 in
+ *     VerifyRequest; and no_params is field 4 in WrapKeyRequest but field 7 in
+ *     UnwrapKeyRequest. A field number therefore cannot serve as a stable
+ *     discriminant for these four, so the marshalling layer maps the
+ *     independent tag to the correct per-message field number itself. Stated
+ *     here so nobody later "fixes" these to look like agc_scope_kind.
  *
  * NoParams (`message NoParams {}`) becomes a TAG VALUE, never an empty
  * struct: AGC_ENCRYPT_PARAMS_NO_PARAMS etc. This preserves the proto's key
@@ -198,26 +205,29 @@ typedef struct agc_wrap_params {
  * KDF / key-agreement operation params
  * (DeriveKeyRequest.kdf_params, KeyAgreementRequest.agreement_params)
  *
- * agc_key_agreement_params (commit 10) reuses this union rather than
- * defining a near-identical narrower one, because agreement_params
- * {Ecdh, X942Dh, X3dh, Vendor} is a strict subset of kdf_params. Out-of-
- * subset tags are rejected at runtime with AGC_ERR_CRYPTO_INCOMPATIBLE_
- * PARAMETERS — one source of truth traded for compile-time enforcement.
+ * KeyAgreementRequest.agreement_params is a SEPARATE union below
+ * (agc_agreement_params) rather than a reuse of this one: its four arms are a
+ * strict subset of these eleven, and giving it its own type makes the subset
+ * a compile-time fact instead of a runtime check.
  * -------------------------------------------------------------------------- */
 
+/* Tags ARE the proto field numbers of DeriveKeyRequest.kdf_params
+ * (api/messages/key_derivation.proto), which is the only message that
+ * carries this oneof. NONE = 0 is the "oneof unset" sentinel, not a wire
+ * value. */
 typedef enum agc_kdf_params_kind {
     AGC_KDF_PARAMS_NONE      = 0,   /* invalid: the oneof is required */
-    AGC_KDF_PARAMS_HKDF      = 1,
-    AGC_KDF_PARAMS_PBKDF2    = 2,
-    AGC_KDF_PARAMS_ARGON2    = 3,
-    AGC_KDF_PARAMS_ECDH      = 4,
-    AGC_KDF_PARAMS_X942_DH   = 5,
-    AGC_KDF_PARAMS_TLS_PRF   = 6,
-    AGC_KDF_PARAMS_TLS12     = 7,
-    AGC_KDF_PARAMS_SP800_108 = 8,
-    AGC_KDF_PARAMS_GOST      = 9,
-    AGC_KDF_PARAMS_X3DH      = 10,
-    AGC_KDF_PARAMS_VENDOR    = 11
+    AGC_KDF_PARAMS_HKDF      = 5,
+    AGC_KDF_PARAMS_PBKDF2    = 6,
+    AGC_KDF_PARAMS_ARGON2    = 7,
+    AGC_KDF_PARAMS_ECDH      = 8,
+    AGC_KDF_PARAMS_X942_DH   = 9,
+    AGC_KDF_PARAMS_TLS_PRF   = 10,
+    AGC_KDF_PARAMS_TLS12     = 11,
+    AGC_KDF_PARAMS_SP800_108 = 12,
+    AGC_KDF_PARAMS_GOST      = 13,
+    AGC_KDF_PARAMS_X3DH      = 14,
+    AGC_KDF_PARAMS_VENDOR    = 15
     AGC_ENUM32(agc_kdf_params_kind)
 } agc_kdf_params_kind;
 
@@ -295,6 +305,35 @@ typedef struct agc_kdf_params {
         agc_custom_params              vendor;
     } u;
 } agc_kdf_params;
+
+/* --------------------------------------------------------------------------
+ * Key-agreement operation params (KeyAgreementRequest.agreement_params)
+ *
+ * A strict subset of the kdf_params arms above, with its own type so that a
+ * caller cannot name a KDF that key agreement does not accept. Tags ARE the
+ * proto field numbers of KeyAgreementRequest.agreement_params
+ * (api/messages/key_derivation.proto), the only message carrying this oneof.
+ * -------------------------------------------------------------------------- */
+
+typedef enum agc_agreement_params_kind {
+    AGC_AGREEMENT_PARAMS_NONE    = 0,  /* invalid: the oneof is required */
+    AGC_AGREEMENT_PARAMS_ECDH    = 5,  /* ECDH (P-256, P-384, P-521), X25519, X448 */
+    AGC_AGREEMENT_PARAMS_X942_DH = 6,  /* X9.42 DH (MODP groups) */
+    AGC_AGREEMENT_PARAMS_X3DH    = 7,  /* Signal X3DH */
+    AGC_AGREEMENT_PARAMS_VENDOR  = 8   /* vendor-specific key agreement */
+    AGC_ENUM32(agc_agreement_params_kind)
+} agc_agreement_params_kind;
+
+typedef struct agc_agreement_params {
+    size_t                    struct_size;
+    agc_agreement_params_kind kind;
+    union {
+        agc_ecdh_operation_params    ecdh;
+        agc_x942_dh_operation_params x942_dh;
+        agc_x3dh_operation_params    x3dh;
+        agc_custom_params            vendor;
+    } u;
+} agc_agreement_params;
 
 #ifdef __cplusplus
 }
