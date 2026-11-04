@@ -103,6 +103,20 @@ AGC_API agc_rc agc_update_key_policy(agc_ctx *ctx, const char *key_name, const c
                                       agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
+ * UpdateKeyState
+ * -------------------------------------------------------------------------- */
+
+/* Moves the key through its lifecycle (NIST SP 800-57 §7): e.g. ACTIVE ->
+ * SUSPENDED, -> COMPROMISED. A transition the lifecycle does not allow
+ * fails with AGC_ERR_CRYPTO_INVALID_KEY_STATE_TRANSITION. `reason` goes to
+ * the audit trail and is REQUIRED for COMPROMISED; NULL otherwise allowed.
+ * UpdateKeyStateResponse's success and message collapse (D4); *resp
+ * describes the key afterwards. */
+AGC_API agc_rc agc_update_key_state(agc_ctx *ctx, const char *key_name,
+                                     agc_key_lifecycle_state target_state, const char *reason,
+                                     agc_key_info_response *resp);
+
+/* --------------------------------------------------------------------------
  * MigrateKey
  * -------------------------------------------------------------------------- */
 

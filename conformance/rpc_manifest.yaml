@@ -81,6 +81,13 @@ services:
       DecryptDigestUpdate: agc_decrypt_digest_update
       SignEncryptUpdate: agc_sign_encrypt_update
       DecryptVerifyUpdate: agc_decrypt_verify_update
+      GenerateMACInit: agc_generate_mac_init
+      GenerateMACUpdate: agc_generate_mac_update
+      GenerateMACFinal: agc_generate_mac_final
+      VerifyMACInit: agc_verify_mac_init
+      VerifyMACUpdate: agc_verify_mac_update
+      VerifyMACFinal: agc_verify_mac_final
+      CancelOperation: agc_cancel_operation
 
   KeyManagementService:
     header: agc_key.h
@@ -92,6 +99,7 @@ services:
       RotateKey: agc_rotate_key
       TransformKey: agc_transform_key
       UpdateKeyPolicy: agc_update_key_policy
+      UpdateKeyState: agc_update_key_state
       MigrateKey: agc_migrate_key
       ValidateKeyOperation: agc_validate_key_operation
       ExportKey: agc_export_key

@@ -307,6 +307,42 @@ AGC_API agc_rc agc_decrypt_verify_update(agc_session *decrypt_session, agc_sessi
                                           agc_slice ciphertext_chunk,
                                           agc_stream_chunk_response *resp);
 
+/* ==========================================================================
+ * 8. MULTI-PART MAC (GenerateMACInit/Update/Final, VerifyMACInit/...)
+ * ========================================================================== */
+
+AGC_API agc_rc agc_generate_mac_init(agc_ctx *ctx, const agc_generate_mac_init_request *req,
+                                      agc_session **out_session);
+
+/* GenerateMACUpdateResponse{bool success} collapses (D4). */
+AGC_API agc_rc agc_generate_mac_update(agc_session *s, agc_slice data_chunk);
+
+/* Shares agc_mac_response with agc_generate_mac. */
+AGC_API agc_rc agc_generate_mac_final(agc_session *s, agc_mac_response *resp);
+
+AGC_API agc_rc agc_verify_mac_init(agc_ctx *ctx, const agc_verify_mac_init_request *req,
+                                    agc_session **out_session);
+
+AGC_API agc_rc agc_verify_mac_update(agc_session *s, agc_slice data_chunk);
+
+/* Fail-closed as agc_verify_mac() (D9): resp->valid is cleared first, a
+ * mismatch returns AGC_ERR_CRYPTO_AUTHENTICATION_FAILED, and the
+ * comparison is constant-time. Shares agc_verify_response. */
+AGC_API agc_rc agc_verify_mac_final(agc_session *s, agc_slice mac, agc_verify_response *resp);
+
+/* ==========================================================================
+ * 9. CancelOperation
+ * ========================================================================== */
+
+/* Ends the streaming operation `operation_id` (agc_session_id()) and releases
+ * its state before its idle TTL. `reason` goes to the audit trail; NULL for
+ * none. CancelOperationResponse's success and message collapse (D4). An
+ * unknown or already-finished operation_id fails with
+ * AGC_ERR_CRYPTO_OPERATION_EXPIRED. The handle, if this process holds one,
+ * stays owned by its creator, who must still agc_session_free() it. For a
+ * session this process holds, agc_session_cancel() does the same. */
+AGC_API agc_rc agc_cancel_operation(agc_ctx *ctx, const char *operation_id, const char *reason);
+
 #ifdef __cplusplus
 }
 #endif

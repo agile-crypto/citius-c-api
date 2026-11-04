@@ -11,7 +11,7 @@ checks, in both directions:
             7 headers is either the mapped function of some RPC, or listed
             in rpc_manifest.yaml's non_rpc_ctx_helpers with a reason.
 
-Also asserts the descriptor carries exactly 90 RPCs across exactly the 7
+Also asserts the descriptor carries exactly 98 RPCs across exactly the 7
 service names the reconciliation targets -- no more, no fewer.
 
 This is the check that would have caught C_API_COMPARISON.md findings B1/B2
@@ -35,11 +35,11 @@ DESCRIPTOR = ROOT / "conformance" / "api_descriptor.binpb"
 MANIFEST = ROOT / "conformance" / "rpc_manifest.yaml"
 INCLUDE_DIR = ROOT / "include" / "agc"
 
-EXPECTED_TOTAL_RPCS = 90
+EXPECTED_TOTAL_RPCS = 98
 EXPECTED_SERVICE_COUNTS = {
     "CryptoService": 12,
-    "StreamingCryptoService": 43,
-    "KeyManagementService": 11,
+    "StreamingCryptoService": 50,
+    "KeyManagementService": 12,
     "KeyEstablishmentService": 6,
     "CryptoPolicyService": 7,
     "ProviderService": 8,

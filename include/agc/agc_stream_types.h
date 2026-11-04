@@ -265,6 +265,29 @@ typedef struct agc_xof_init_request {
     agc_kv_list                      user_context;
 } agc_xof_init_request;
 
+/* ==========================================================================
+ * 6. MULTI-PART MAC (GenerateMACInit/Update/Final, VerifyMACInit/...)
+ * ========================================================================== */
+
+typedef struct agc_generate_mac_init_request {
+    size_t                struct_size;
+    const char           *key_name;           /* REQUIRED */
+    const agc_mac_params *params;             /* REQUIRED -- the oneof is required */
+    agc_kv_list           user_context;
+    agc_encoding          metadata_encoding;  /* REQUIRED: of the metadata Final returns */
+} agc_generate_mac_init_request;
+
+typedef struct agc_verify_mac_init_request {
+    size_t                struct_size;
+    const char           *key_name;           /* REQUIRED */
+    const agc_mac_params *params;             /* REQUIRED -- must match generation */
+    /* The metadata the MAC was generated with, encoded, encoding byte first:
+     * it names the key version (essential after rotation). {NULL,0} => the
+     * key's latest version. */
+    agc_slice             metadata;
+    agc_kv_list           user_context;
+} agc_verify_mac_init_request;
+
 #ifdef __cplusplus
 }
 #endif
