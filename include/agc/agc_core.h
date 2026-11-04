@@ -31,11 +31,11 @@
  * FORK
  * ----
  * After fork(2) the child MUST NOT use any handle inherited from the parent.
- * The library installs a pthread_atfork handler that marks every open
- * context POISONED in the child; operations on a poisoned context fail with
- * AGC_ERR_INVALID_HANDLE rather than silently reusing state the parent also
- * holds. Call agc_ctx_reinit_after_fork() in the child to obtain a fresh,
- * usable context built from the same configuration.
+ * In the child, every context inherited from the parent is POISONED: each
+ * operation on it fails with AGC_ERR_INVALID_HANDLE rather than silently
+ * reusing state the parent also holds. Call agc_ctx_reinit_after_fork() in
+ * the child to obtain a fresh, usable context built from the same
+ * configuration. How the library detects the fork is unspecified.
  *
  * DEPLOYMENT MODE
  * ----------------
