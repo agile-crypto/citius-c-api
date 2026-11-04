@@ -1,162 +1,124 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
- * agc_provider.h — ProviderService (8 RPCs; api/services/provider_service.proto).
+ * agc_provider.h — ProviderService (8 RPCs;
+ * api/services/provider_service.proto).
  *
- * Two distinct concepts, kept distinct as in the proto: ProviderInfo (a
- * provider TYPE and its capabilities -- static catalog) vs. ProviderInstance
- * (a CONFIGURED provider ready for use). This build has exactly one
- * provider type ("stub") and whatever instances a caller registers.
+ * Functions only. Every request and response type they name is defined in
+ * agc_provider_types.h, which also states the STORAGE CONTRACT that governs
+ * every caller-allocated record below.
  *
- * SCOPING NOTE: ImplementationProperties has ~13 tribool/string fields in
- * the proto; this reconciliation implements the subset a caller can
- * meaningfully act on for a stub provider (fips/constant-time/memory-safe
- * posture) rather than all of them, since the stub has no real per-field
- * data behind most of the rest (audits, CVE lists, hardware features).
+ * SHAPE OF EVERY CALL
+ * -------------------
+ *     agc_rc agc_<op>(agc_ctx *ctx, const agc_<op>_request *req, agc_<op>_response *resp);
+ *
+ * One request struct, one response struct, both CALLER-ALLOCATED, both
+ * beginning with struct_size (AGC_INIT). The library writes only into
+ * regions the caller placed in the response; it allocates nothing the caller
+ * sees and there is nothing to free, except the two iterator handles.
+ * Rules: docs/agc_crypto.md.
+ *
+ * Three shapes differ, for reasons recorded here:
+ *   - DeleteProviderInstance takes no response parameter. Its proto response
+ *     carries only success/message, which collapse into agc_rc and
+ *     agc_last_error (D4).
+ *   - GetProviderResponse, GetProviderInstanceResponse and -- once
+ *     success/message collapse -- RegisterProviderInstanceResponse and
+ *     UpdateProviderInstanceResponse each hold a single message field. Both
+ *     agc_provider_info and agc_provider_instance are descriptive and carry
+ *     no storage, so those four flatten onto two shared wrappers that supply
+ *     it: agc_provider_info_response and agc_provider_instance_response.
+ *   - GetProvider, GetProviderInstance and DeleteProviderInstance take a
+ *     bare id string rather than a one-field request struct, and Register
+ *     and Update take a bare agc_provider_instance, matching the same
+ *     flattening applied in agc_policy.h.
+ *
+ * STATUS: declarations only. Implementation follows; see
+ * docs/implementation_progress.md.
  */
 
 #ifndef AGC_PROVIDER_H
 #define AGC_PROVIDER_H
 
 #include "agc_core.h"
-#include "agc_scope.h"
+#include "agc_provider_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* --------------------------------------------------------------------------
- * ImplementationProperties
- * -------------------------------------------------------------------------- */
-
-AGC_API void agc_impl_props_free(agc_impl_props *ip);
-
-AGC_API int               agc_impl_props_fips_certified(const agc_impl_props *ip);
-AGC_API agc_fips140_level agc_impl_props_fips_level(const agc_impl_props *ip);
-AGC_API agc_tribool       agc_impl_props_formally_verified(const agc_impl_props *ip);
-AGC_API agc_tribool       agc_impl_props_memory_safe_language(const agc_impl_props *ip);
-AGC_API const char       *agc_impl_props_implementation_language(const agc_impl_props *ip);
-AGC_API agc_tribool       agc_impl_props_constant_time(const agc_impl_props *ip);
-AGC_API agc_tribool       agc_impl_props_side_channel_hardened(const agc_impl_props *ip);
-AGC_API agc_tribool       agc_impl_props_hardware_accelerated(const agc_impl_props *ip);
-
-/* --------------------------------------------------------------------------
  * Provider capabilities (static catalog)
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_list_providers_params {
-    size_t                            struct_size;
-    const char                       *template_id;  /* NULL => no template filter */
-    const agc_provider_requirements  *requirements;  /* NULL => no filter */
-    uint32_t                          page_size;
-} agc_list_providers_params;
-
-AGC_API agc_rc agc_list_providers(agc_ctx *ctx, const agc_list_providers_params *p,
+/* The iterator is a library-owned handle (it has a lifecycle: paging
+ * bookkeeping, D12); the records it yields are caller-allocated. */
+AGC_API agc_rc agc_list_providers(agc_ctx *ctx, const agc_list_providers_request *req,
                                    agc_provider_iter **out_iter);
-AGC_API agc_rc agc_provider_iter_next(agc_provider_iter *it, agc_provider_info **out);
+
+/* Fills *out with the next provider type. On AGC_ERR_BUFFER_TOO_SMALL the
+ * cursor does not advance, so the caller may resize out->storage and call
+ * again for the same provider. AGC_ERR_ITERATOR_EXHAUSTED at the end. A
+ * caller may reuse one record and one storage region across the whole loop.
+ * Fills the shared single-provider response, since agc_provider_info carries
+ * no storage of its own. */
+AGC_API agc_rc agc_provider_iter_next(agc_provider_iter *it, agc_provider_info_response *out);
 AGC_API void   agc_provider_iter_free(agc_provider_iter *it);
 
-AGC_API agc_rc agc_get_provider(agc_ctx *ctx, const char *provider_id, agc_provider_info **out_provider);
-
-AGC_API void agc_provider_info_free(agc_provider_info *pi);
-
-AGC_API const char       *agc_provider_info_id(const agc_provider_info *pi);
-AGC_API const char       *agc_provider_info_display_name(const agc_provider_info *pi);
-AGC_API const char       *agc_provider_info_description(const agc_provider_info *pi);
-AGC_API agc_provider_type agc_provider_info_type(const agc_provider_info *pi);
-
-/* Provider-wide defaults. Borrowed -- do NOT free. */
-AGC_API const agc_impl_props *agc_provider_info_default_implementation(const agc_provider_info *pi);
-
-/* capabilities (map<string, string>). */
-AGC_API size_t      agc_provider_info_capability_count(const agc_provider_info *pi);
-AGC_API agc_rc      agc_provider_info_capability_at(const agc_provider_info *pi, size_t i,
-                                                     const char **out_key, const char **out_value);
-AGC_API const char *agc_provider_info_capability_get(const agc_provider_info *pi, const char *key);
+/* GetProviderRequest is {provider_id} and GetProviderResponse is {provider};
+ * both flatten. */
+AGC_API agc_rc agc_get_provider(agc_ctx *ctx, const char *provider_id,
+                                 agc_provider_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * Provider instances (runtime configuration)
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_provider_instance_spec {
-    size_t       struct_size;
-    const char  *instance_id;    /* REQUIRED */
-    const char  *provider_id;    /* REQUIRED -- must name a known ProviderInfo */
-    const char  *display_name;
-    const char  *description;
-    /* Sensitive values SHOULD use indirection, e.g. {"pin_env":
-     * "HSM_PAYMENTS_PIN"} rather than the PIN itself -- restating the
-     * proto's own documented convention, since a C API is the one most
-     * likely to be handed a literal secret in a config map. */
-    agc_kv_list  configuration;
-    int          enabled;        /* matches the proto's own field and default (true) */
-} agc_provider_instance_spec;
+/* `instance` is the caller-built instance to register; its strings and map
+ * come from caller memory. *resp receives the registered instance with any
+ * defaults applied, into resp->storage, and may be NULL if the caller does
+ * not want it back. Configuration is validated against the provider's
+ * configuration_schema. */
+AGC_API agc_rc agc_register_provider_instance(agc_ctx *ctx,
+                                               const agc_provider_instance *instance,
+                                               agc_provider_instance_response *resp);
 
-AGC_API agc_rc agc_register_provider_instance(agc_ctx *ctx, const agc_provider_instance_spec *spec,
-                                               agc_provider_instance **out_instance);
-
-typedef struct agc_list_provider_instances_params {
-    size_t                           struct_size;
-    const char                      *provider_id;   /* NULL => any type */
-    const agc_provider_requirements *requirements;  /* NULL => no filter */
-    int                              enabled_only;   /* matches the proto field name and polarity */
-    uint32_t                         page_size;
-} agc_list_provider_instances_params;
-
-AGC_API agc_rc agc_list_provider_instances(agc_ctx *ctx, const agc_list_provider_instances_params *p,
+AGC_API agc_rc agc_list_provider_instances(agc_ctx *ctx,
+                                            const agc_list_provider_instances_request *req,
                                             agc_provider_instance_iter **out_iter);
-AGC_API agc_rc agc_provider_instance_iter_next(agc_provider_instance_iter *it, agc_provider_instance **out);
+
+/* Same cursor and storage contract as agc_provider_iter_next. Fills the
+ * shared single-instance response, since agc_provider_instance carries no
+ * storage of its own. */
+AGC_API agc_rc agc_provider_instance_iter_next(agc_provider_instance_iter *it,
+                                                agc_provider_instance_response *out);
 AGC_API void   agc_provider_instance_iter_free(agc_provider_instance_iter *it);
 
+/* GetProviderInstanceRequest is {instance_id} and its response is
+ * {instance}; both flatten. */
 AGC_API agc_rc agc_get_provider_instance(agc_ctx *ctx, const char *instance_id,
-                                          agc_provider_instance **out_instance);
+                                          agc_provider_instance_response *resp);
 
-/* FULL-REPLACEMENT semantics, as in the proto: no field masking. */
-AGC_API agc_rc agc_update_provider_instance(agc_ctx *ctx, const agc_provider_instance_spec *spec,
-                                             agc_provider_instance **out_instance);
+/* FULL-REPLACEMENT semantics, as in the proto: there is no field masking, so
+ * every field of `instance` is written. Read the current instance with
+ * agc_get_provider_instance first and modify it in place, which is what
+ * stops fields being silently dropped. *resp may be NULL. */
+AGC_API agc_rc agc_update_provider_instance(agc_ctx *ctx,
+                                             const agc_provider_instance *instance,
+                                             agc_provider_instance_response *resp);
 
-/* Populates *out_spec from an existing instance so read-modify-write does
- * not force the caller to reconstruct every field by hand -- which is
- * where fields get silently dropped under full-replacement semantics. The
- * strings in *out_spec are borrowed from `instance` and invalid once it is
- * freed. */
-AGC_API agc_rc agc_provider_instance_to_spec(const agc_provider_instance *instance,
-                                              agc_provider_instance_spec *out_spec);
-
-/* Fails while keys still reference this instance. */
+/* DeleteProviderInstanceRequest is {instance_id}, flattened; its response is
+ * {success, message}, which collapses (D4). Fails while keys still reference
+ * this instance; the reason is available from agc_last_error(). */
 AGC_API agc_rc agc_delete_provider_instance(agc_ctx *ctx, const char *instance_id);
-
-AGC_API void agc_provider_instance_free(agc_provider_instance *inst);
-
-AGC_API const char *agc_provider_instance_id(const agc_provider_instance *inst);
-AGC_API const char *agc_provider_instance_provider_id(const agc_provider_instance *inst);
-AGC_API const char *agc_provider_instance_display_name(const agc_provider_instance *inst);
-AGC_API const char *agc_provider_instance_description(const agc_provider_instance *inst);
-AGC_API int         agc_provider_instance_enabled(const agc_provider_instance *inst);
-AGC_API size_t      agc_provider_instance_config_count(const agc_provider_instance *inst);
-AGC_API agc_rc      agc_provider_instance_config_at(const agc_provider_instance *inst, size_t i,
-                                                     const char **out_key, const char **out_value);
 
 /* --------------------------------------------------------------------------
  * Provider matching
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_match_providers_params {
-    size_t                            struct_size;
-    const char                       *template_id;      /* REQUIRED */
-    const agc_provider_requirements  *requirements;      /* NULL => no filter */
-    int                               enabled_only;       /* matches the proto field name and polarity */
-} agc_match_providers_params;
-
-typedef struct agc_provider_match {
-    const agc_provider_instance *instance;
-    const agc_impl_props        *resolved_implementation; /* borrowed */
-    int32_t                      match_score;             /* higher is better */
-} agc_provider_match;
-
-/* Results are sorted by match_score, highest first. */
-AGC_API agc_rc agc_match_providers(agc_ctx *ctx, const agc_match_providers_params *p,
-                                    agc_provider_match **out_matches, size_t *out_count);
-AGC_API void   agc_provider_match_list_free(agc_provider_match *matches, size_t count);
+/* Finds the instances satisfying req->requirements for req->template_id,
+ * best match first. Read-only, so its storage requirement is exact. */
+AGC_API agc_rc agc_match_providers(agc_ctx *ctx, const agc_match_providers_request *req,
+                                    agc_match_providers_response *resp);
 
 #ifdef __cplusplus
 }

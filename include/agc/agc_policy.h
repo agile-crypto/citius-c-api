@@ -1,25 +1,38 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
- * agc_policy.h — CryptoPolicyService (7 RPCs; api/services/crypto_policy_service.proto
- * and api/messages/policy.proto). Fields verified directly against the proto:
- * there is NO policy format and NO optimistic-concurrency version anywhere
- * on the wire (CreateCryptoPolicyRequest is {name, policy_document};
- * PolicySummary is {name, created_at, updated_at}) -- an earlier draft of
- * this reconciliation invented a format string, a version counter, and a
- * CRYPTO_ERROR_POLICY_VERSION_CONFLICT code to go with it. See
- * docs/PROTO_RFCS.md RFC-02 (commit 13) for that as a proposed extension.
+ * agc_policy.h — CryptoPolicyService (7 RPCs;
+ * api/services/crypto_policy_service.proto and api/messages/policy.proto).
  *
- * The policy document itself stays an OPAQUE STRING, exactly as in the
- * proto -- the API deliberately does not know whether a deployment writes
- * JSON, Rego or Cedar. Projecting any policy schema into C would freeze one
- * policy language into the ABI.
+ * Functions only. Every request and response type they name is defined in
+ * agc_policy_types.h, which also states the STORAGE CONTRACT that governs
+ * every caller-allocated record below.
+ *
+ * SHAPE OF EVERY CALL
+ * -------------------
+ *     agc_rc agc_<op>(agc_ctx *ctx, const agc_<op>_request *req, agc_<op>_response *resp);
+ *
+ * One request struct, one response struct, both CALLER-ALLOCATED, both
+ * beginning with struct_size (AGC_INIT). The library writes only into
+ * regions the caller placed in the response; it allocates nothing the caller
+ * sees and there is nothing to free, except the one iterator handle.
+ * Rules: docs/agc_crypto.md.
+ *
+ * Two shapes differ, for reasons recorded here:
+ *   - Create, Update and Delete take no response parameter. Their proto
+ *     responses carry only success/message, which collapse into agc_rc and
+ *     agc_last_error (D4), leaving nothing to project.
+ *   - Read and Delete take a bare `const char *name` rather than a
+ *     one-field request struct, matching agc_read_key and agc_delete_key.
+ *
+ * STATUS: declarations only. Implementation follows; see
+ * docs/implementation_progress.md.
  */
 
 #ifndef AGC_POLICY_H
 #define AGC_POLICY_H
 
 #include "agc_core.h"
-#include "agc_scope.h"
+#include "agc_policy_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,101 +42,56 @@ extern "C" {
  * Policy CRUD
  * -------------------------------------------------------------------------- */
 
-AGC_API agc_rc agc_create_policy(agc_ctx *ctx, const char *name, const char *policy_document);
+/* CreateCryptoPolicyResponse is {success, message}; both collapse into the
+ * return code and agc_last_error (D4), so there is no response parameter. */
+AGC_API agc_rc agc_create_policy(agc_ctx *ctx, const agc_create_policy_request *req);
 
-typedef struct agc_policy_document {
-    size_t      struct_size;
-    const char *name;
-    const char *policy_document;
-} agc_policy_document;
+/* UpdateCryptoPolicyResponse is {success, message}; both collapse (D4). */
+AGC_API agc_rc agc_update_policy(agc_ctx *ctx, const agc_update_policy_request *req);
 
-/* The strings in *out are owned by the library and invalidated by
- * agc_policy_document_release(). */
-AGC_API agc_rc agc_read_policy(agc_ctx *ctx, const char *name, agc_policy_document *out);
-AGC_API void   agc_policy_document_release(agc_policy_document *doc);
+/* ReadCryptoPolicyRequest is {name}, flattened to a bare string. */
+AGC_API agc_rc agc_read_policy(agc_ctx *ctx, const char *name,
+                                agc_read_policy_response *resp);
 
-AGC_API agc_rc agc_update_policy(agc_ctx *ctx, const char *name, const char *policy_document);
-
-/* Fails while keys are still bound to the policy (referential integrity);
- * the reason is available from agc_last_error(). */
+/* DeleteCryptoPolicyRequest is {name}, flattened; DeleteCryptoPolicyResponse
+ * is {success}, which collapses (D4). Fails while keys are still bound to
+ * the policy (referential integrity); the reason is available from
+ * agc_last_error(). */
 AGC_API agc_rc agc_delete_policy(agc_ctx *ctx, const char *name);
 
-/* name_prefix may be NULL to list all. */
-AGC_API agc_rc agc_list_policies(agc_ctx *ctx, const char *name_prefix, uint32_t page_size,
+/* --------------------------------------------------------------------------
+ * ListCryptoPolicies
+ * -------------------------------------------------------------------------- */
+
+/* The iterator is a library-owned handle (it has a lifecycle: paging
+ * bookkeeping, D12); the records it yields are caller-allocated. */
+AGC_API agc_rc agc_list_policies(agc_ctx *ctx, const agc_list_policies_request *req,
                                   agc_policy_iter **out_iter);
 
-typedef struct agc_policy_summary {
-    const char   *name;
-    agc_timestamp created_at;
-    agc_timestamp updated_at;
-} agc_policy_summary;
-
-/* The strings in *out are owned by the iterator and invalidated by the next
- * call to agc_policy_iter_next() on the same iterator. */
-AGC_API agc_rc agc_policy_iter_next(agc_policy_iter *it, agc_policy_summary *out);
+/* Fills *out with the next policy summary. On AGC_ERR_BUFFER_TOO_SMALL the
+ * cursor does not advance, so the caller may resize out->storage and call
+ * again for the same policy. AGC_ERR_ITERATOR_EXHAUSTED at the end. A caller
+ * may reuse one record and one storage region across the whole loop. */
+AGC_API agc_rc agc_policy_iter_next(agc_policy_iter *it, agc_policy_summary_response *out);
 AGC_API void   agc_policy_iter_free(agc_policy_iter *it);
 
 /* --------------------------------------------------------------------------
  * Policy evaluation
  * -------------------------------------------------------------------------- */
 
-typedef struct agc_evaluate_policy_request {
-    size_t                struct_size;
-    const char           *policy_name;   /* REQUIRED */
-    agc_crypto_operation   operation;     /* REQUIRED; UNSPECIFIED is rejected */
-
-    /* Context. The proto requires at least one of these to be present (CEL
-     * rule "evaluation_context_required"); the same check is applied here. */
-    const char           *key_name;
-    const char           *template_id;
-    const agc_scope_spec *scope_spec;
-    const char           *provider_id;
-    agc_kv_list           properties;
-} agc_evaluate_policy_request;
-
 /* Read-only: performs no cryptographic work. A DENIED decision is still a
- * SUCCESSFUL call -- it returns AGC_OK with agc_policy_decision_allowed()
- * reporting 0. Mapping denial onto an error code would make it impossible
- * to distinguish "policy says no" from "policy engine is broken". */
+ * SUCCESSFUL call -- it returns AGC_OK with resp->decision.allowed == 0.
+ * Mapping denial onto an error code would make it impossible to distinguish
+ * "policy says no" from "policy engine is broken". */
 AGC_API agc_rc agc_evaluate_policy(agc_ctx *ctx, const agc_evaluate_policy_request *req,
-                                    agc_policy_decision **out_decision);
+                                    agc_evaluate_policy_response *resp);
 
-/* requests is an array of `count` requests; out_decisions must point to an
- * array of `count` pointers, filled in request order, each freed
- * individually. */
-AGC_API agc_rc agc_batch_evaluate_policy(agc_ctx *ctx, const agc_evaluate_policy_request *requests,
-                                          size_t count, agc_policy_decision **out_decisions,
-                                          int32_t *out_allowed_count, int32_t *out_denied_count);
-
-AGC_API void agc_policy_decision_free(agc_policy_decision *d);
-
-AGC_API int                      agc_policy_decision_allowed(const agc_policy_decision *d);
-AGC_API agc_policy_denial_reason agc_policy_decision_denial_reason(const agc_policy_decision *d);
-AGC_API const char              *agc_policy_decision_message(const agc_policy_decision *d);
-
-/* PolicyDecisionDetails -- audit trail for the decision.
- *
- * checks_performed lists every check the evaluator actually ran; since
- * this stub evaluator's real semantics are a single substring test against
- * the opaque policy document (see policy.c's module comment), that list
- * always has exactly one entry: the operation name checked.
- * PolicyDecisionDetails.allowed_operations is NOT projected here -- the
- * stub evaluator answers "is THIS operation allowed", never "list every
- * operation this policy allows", which is a different (and, for an opaque
- * text document, considerably harder) question this reconciliation does
- * not attempt. */
-AGC_API const char   *agc_policy_decision_policy_name(const agc_policy_decision *d);
-AGC_API const char   *agc_policy_decision_policy_version(const agc_policy_decision *d);
-AGC_API agc_timestamp agc_policy_decision_timestamp(const agc_policy_decision *d);
-AGC_API const char   *agc_policy_decision_failed_check(const agc_policy_decision *d);
-AGC_API size_t        agc_policy_decision_checks_performed_count(const agc_policy_decision *d);
-AGC_API const char   *agc_policy_decision_checks_performed_at(const agc_policy_decision *d, size_t i);
-
-/* Helpful alternatives for a denied decision. Always 0 items in this
- * build: the minimal evaluator never computes an allow-list of OTHER
- * templates, only a yes/no on the one operation asked about. */
-AGC_API size_t      agc_policy_decision_allowed_templates_count(const agc_policy_decision *d);
-AGC_API const char *agc_policy_decision_allowed_template_at(const agc_policy_decision *d, size_t i);
+/* Evaluates several requests in one call, filling resp->results in request
+ * order. Same read-only contract as agc_evaluate_policy: a denied decision
+ * is a successful call. */
+AGC_API agc_rc agc_batch_evaluate_policy(agc_ctx *ctx,
+                                          const agc_batch_evaluate_policy_request *req,
+                                          agc_batch_evaluate_policy_response *resp);
 
 #ifdef __cplusplus
 }

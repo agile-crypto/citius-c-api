@@ -71,7 +71,7 @@ TAG_REGISTRY = [
         },
     ),
     (
-        "agc_key.h",
+        "agc_key_types.h",
         "api/messages/key_management.proto",
         "MigrateKeyRequest",
         {
@@ -80,7 +80,7 @@ TAG_REGISTRY = [
         },
     ),
     (
-        "agc_key.h",
+        "agc_key_types.h",
         "api/messages/key_management.proto",
         "ValidateKeyOperationRequest",
         {
@@ -89,7 +89,7 @@ TAG_REGISTRY = [
         },
     ),
     (
-        "agc_key.h",
+        "agc_key_types.h",
         "api/messages/key_management.proto",
         "ValidateMigrateIntent",
         {

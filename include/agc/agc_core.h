@@ -81,46 +81,15 @@ typedef struct agc_ctx agc_ctx;
  * for cross-process correlation and for relaying a session elsewhere. */
 typedef struct agc_session agc_session;
 
-/* OperationMetadata: key version, provider output (IV/nonce/salt/...), API
- * version and user context. MUST be stored alongside every ciphertext,
- * signature, MAC and wrapped key (commit 6). */
+/* OperationMetadata is NOT an opaque handle any more: it is the
+ * caller-allocated struct defined in agc_metadata.h, and operations return
+ * it encoded into caller regions. This forward declaration remains only so
+ * that headers not yet converted (agc_stream.h, agc_establish.h; see
+ * docs/implementation_progress.md) still parse. */
 typedef struct agc_metadata agc_metadata;
 
-/* KeyMetadata: everything ReadKey returns about a key (commit 7). */
-typedef struct agc_key_info agc_key_info;
-
-/* TemplateInfo: one algorithm configuration plus its scoped capabilities
- * (commit 11). */
-typedef struct agc_template_info agc_template_info;
-
-/* ScopeInfo: human-readable description of one scope (commit 11). */
 typedef struct agc_scope_info agc_scope_info;
 
-/* ProviderInfo: a provider TYPE and its capabilities (commit 11). */
-typedef struct agc_provider_info agc_provider_info;
-
-/* ProviderInstance: a CONFIGURED provider ready for use (commit 11). */
-typedef struct agc_provider_instance agc_provider_instance;
-
-/* ImplementationProperties: FIPS status, verification, side-channel posture
- * (commit 11). */
-typedef struct agc_impl_props agc_impl_props;
-
-/* SecurityGuarantees: formal notions, practical outcomes, operational
- * bounds (commit 11). */
-typedef struct agc_security_guarantees agc_security_guarantees;
-
-/* EvaluatePolicyResponse: allow/deny plus reasoning and alternatives
- * (commit 11). */
-typedef struct agc_policy_decision agc_policy_decision;
-
-/* ValidateKeyOperationResponse: feasibility report for transform/migrate
- * (commit 7). */
-typedef struct agc_feasibility_report agc_feasibility_report;
-
-/* MigrateKeyResponse detail: what happened, plus archived-key info
- * (commit 7). */
-typedef struct agc_migration_report agc_migration_report;
 
 /* Iterator cursors. Each hides paging bookkeeping (D12). */
 typedef struct agc_key_iter               agc_key_iter;
@@ -252,26 +221,22 @@ AGC_API void *agc_secure_alloc(size_t n);
 AGC_API void  agc_secure_free(void *p, size_t n);
 
 /* --------------------------------------------------------------------------
- * OperationMetadata (commit 6)
+ * OperationMetadata
  *
- * Every operation that produces a durable artifact also produces metadata
- * that MUST be stored with it. In the proto this is a nested message; here
- * it is an opaque handle with (a) a canonical byte encoding for storage and
- * (b) typed accessors for callers that need to inspect it.
- *
- * The canonical encoding IS the protobuf wire encoding of OperationMetadata
- * (hand-written codec in src/wire/, no libprotobuf dependency): an artifact
- * produced by this library must be decryptable by the Go service and vice
- * versa, and the wire format is the only encoding both already agree on.
- * Callers treat the bytes as opaque. See RECONCILIATION_PLAN.md D11.
+ * Moved to agc_metadata.h as a caller-allocated struct with two byte
+ * encodings. The former opaque handle, its agc_metadata_free/new and its
+ * accessors are gone (docs/representing_metadata.md, docs/agc_crypto.md).
+ * Only the algorithm-output discriminant stays here because agc_metadata.h
+ * and every service header need it.
  * -------------------------------------------------------------------------- */
 
 /* Tag values are the proto field numbers of ProviderOutput.algorithm_output
  * (10-16), verified against the pinned descriptor by
  * conformance/tier1c_oneof_tags.py. AGC_ALGORITHM_OUTPUT_NONE (0) is the
- * "oneof unset" sentinel and NEVER appears on a handle a caller can hold —
+ * "oneof unset" sentinel: it never appears in metadata a caller can hold --
  * an unset oneof is a provider bug and is rejected with
- * AGC_ERR_PROVIDER_CONTRACT_VIOLATION before any handle is created. */
+ * AGC_ERR_PROVIDER_CONTRACT_VIOLATION. A value this header does not name is
+ * rejected by agc_metadata_decode() (agc_metadata.h, contract point 7). */
 typedef enum agc_algorithm_output_kind {
     AGC_ALGORITHM_OUTPUT_NONE          = 0,   /* provider bug: oneof unset */
     AGC_ALGORITHM_OUTPUT_NO_OUTPUT     = 10,  /* explicit "no system-generated params" */
@@ -283,57 +248,6 @@ typedef enum agc_algorithm_output_kind {
     AGC_ALGORITHM_OUTPUT_VENDOR        = 16
     AGC_ENUM32(agc_algorithm_output_kind)
 } agc_algorithm_output_kind;
-
-AGC_API void   agc_metadata_free(agc_metadata *md);
-
-/* Serialise for storage. Two-call convention (agc_buf). */
-AGC_API agc_rc agc_metadata_encode(const agc_metadata *md, agc_buf out, size_t *out_len);
-
-/* Reconstruct from stored bytes. Fails with AGC_ERR_PROVIDER_CONTRACT_VIOLATION
- * (and creates no handle) if the decoded ProviderOutput.algorithm_output
- * oneof is unset, exactly as a live provider response would be rejected. */
-AGC_API agc_rc agc_metadata_decode(agc_ctx *ctx, agc_slice encoded, agc_metadata **out_md);
-
-/* Constructs empty (NO_OUTPUT) metadata, for the rare case where a caller
- * must synthesise it (e.g. migrating artifacts produced by a pre-1.0
- * implementation). */
-AGC_API agc_rc agc_metadata_new(agc_ctx *ctx, agc_metadata **out_md);
-
-/* --- Accessors --- */
-
-AGC_API uint32_t    agc_metadata_key_version(const agc_metadata *md);
-AGC_API const char *agc_metadata_api_version(const agc_metadata *md);  /* never NULL */
-
-/* ProviderOutput.encoding: "raw", "der", "jws", "cbor". Never NULL; "" means
- * the proto3 default ("raw" per convention, not enforced by this layer). */
-AGC_API const char *agc_metadata_encoding(const agc_metadata *md);
-
-AGC_API agc_algorithm_output_kind agc_metadata_output_kind(const agc_metadata *md);
-
-/* Typed algorithm output. Each returns AGC_ERR_INVALID_ARGUMENT if the
- * metadata does not carry that arm. Byte outputs use the two-call
- * convention. */
-AGC_API agc_rc agc_metadata_aead_nonce(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_aead_tag_len(const agc_metadata *md, uint32_t *out_bytes);
-AGC_API agc_rc agc_metadata_block_iv(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_counter_block(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_counter_bits(const agc_metadata *md, uint32_t *out_bits);
-AGC_API agc_rc agc_metadata_stream_nonce(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_stream_block_counter(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_kdf_salt(const agc_metadata *md, agc_buf out, size_t *out_len);
-AGC_API agc_rc agc_metadata_kdf_iv(const agc_metadata *md, agc_buf out, size_t *out_len);
-
-/* VendorOutput.parameters (map<string, bytes>). Iterate by index. */
-AGC_API size_t agc_metadata_vendor_param_count(const agc_metadata *md);
-AGC_API agc_rc agc_metadata_vendor_param_at(const agc_metadata *md, size_t index,
-                                             const char **out_key,
-                                             agc_buf out_value, size_t *out_value_len);
-
-/* user_context (map<string, string>) carried through from the request. */
-AGC_API size_t      agc_metadata_user_context_count(const agc_metadata *md);
-AGC_API agc_rc      agc_metadata_user_context_at(const agc_metadata *md, size_t index,
-                                                  const char **out_key, const char **out_value);
-AGC_API const char *agc_metadata_user_context_get(const agc_metadata *md, const char *key);
 
 /* --------------------------------------------------------------------------
  * Sessions (StreamingCryptoService, commit 9)
