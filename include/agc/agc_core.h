@@ -154,6 +154,14 @@ typedef struct agc_ctx_config {
      * authorization. In EMBEDDED mode this is the process's own credential
      * material. */
     agc_slice caller_identity;
+
+    /* Where the context keeps keys. NULL keeps them in memory: they are lost
+     * on agc_ctx_close(). "file:<directory>" names a directory owned by the
+     * library. Every other scheme is reserved and refused with
+     * AGC_ERR_NOT_IMPLEMENTED, as is any scheme this build does not support.
+     * One store is used by one context at a time; a second context opened on
+     * the same store fails rather than share it. */
+    agc_str  key_store_uri;
 } agc_ctx_config;
 
 /* All agc_str/agc_slice fields of *cfg are copied; the caller need not keep
