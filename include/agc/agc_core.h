@@ -31,11 +31,11 @@
  * FORK
  * ----
  * After fork(2) the child MUST NOT use any handle inherited from the parent.
- * The library installs a pthread_atfork handler that marks every open
- * context POISONED in the child; operations on a poisoned context fail with
- * AGC_ERR_INVALID_HANDLE rather than silently reusing state the parent also
- * holds. Call agc_ctx_reinit_after_fork() in the child to obtain a fresh,
- * usable context built from the same configuration.
+ * In the child, every context inherited from the parent is POISONED: each
+ * operation on it fails with AGC_ERR_INVALID_HANDLE rather than silently
+ * reusing state the parent also holds. Call agc_ctx_reinit_after_fork() in
+ * the child to obtain a fresh, usable context built from the same
+ * configuration. How the library detects the fork is unspecified.
  *
  * DEPLOYMENT MODE
  * ----------------
@@ -154,11 +154,25 @@ typedef struct agc_ctx_config {
      * authorization. In EMBEDDED mode this is the process's own credential
      * material. */
     agc_slice caller_identity;
+
+    /* Where the context keeps keys. NULL keeps them in memory: they are lost
+     * on agc_ctx_close(). "file:<directory>" names a directory owned by the
+     * library. Every other scheme is reserved and refused with
+     * AGC_ERR_NOT_IMPLEMENTED, as is any scheme this build does not support.
+     * One store is used by one context at a time; a second context opened on
+     * the same store fails rather than share it. */
+    agc_str  key_store_uri;
 } agc_ctx_config;
 
 /* All agc_str/agc_slice fields of *cfg are copied; the caller need not keep
  * them alive past this call. Returns AGC_ERR_NOT_IMPLEMENTED for
- * AGC_MODE_LOCAL/AGC_MODE_REMOTE in this build. */
+ * AGC_MODE_LOCAL/AGC_MODE_REMOTE in this build.
+ *
+ * A setting the implementation cannot honour (fips_mode without a
+ * FIPS-validated provider, require_locked_memory, a catalog_path,
+ * provider_config_path or key_store_uri it cannot use) makes the call fail
+ * with AGC_ERR_NOT_IMPLEMENTED. It is never silently ignored: an ignored
+ * setting would promise a guarantee the library does not give. */
 AGC_API agc_rc agc_ctx_open(const agc_ctx_config *cfg, agc_ctx **out_ctx);
 
 /* Destroys the context. All handles derived from it become invalid. Any
