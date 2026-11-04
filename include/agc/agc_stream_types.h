@@ -105,7 +105,6 @@ typedef struct agc_stream_metadata_response {
 typedef struct agc_encrypt_init_request {
     size_t                    struct_size;
     const char               *key_name;           /* REQUIRED */
-    const char               *operation_id;       /* optional caller-chosen id */
     const agc_encrypt_params *params;             /* REQUIRED */
     agc_kv_list               user_context;
     agc_encoding              metadata_encoding;  /* REQUIRED; encoding the closing call emits */
@@ -114,7 +113,6 @@ typedef struct agc_encrypt_init_request {
 typedef struct agc_decrypt_init_request {
     size_t                    struct_size;
     const char               *key_name;           /* REQUIRED */
-    const char               *operation_id;
     const agc_encrypt_params *params;             /* REQUIRED -- must match encryption */
     agc_slice                 metadata;           /* REQUIRED -- encoded, encoding byte first;
                                                      carries the nonce/IV */
@@ -136,12 +134,15 @@ typedef struct agc_encrypt_message_request {
                                       * key_name rather than relying on the session */
     agc_slice    associated_data;
     agc_slice    plaintext;
+    /* REQUIRED: the session from the matching *_message_init, as
+     * agc_session_id() returns it. */
+    const char  *operation_id;
     agc_kv_list  user_context;
     agc_encoding metadata_encoding;  /* REQUIRED */
 } agc_encrypt_message_request;
 
-/* DecryptMessageInitRequest is {key_name, operation_id, scope_params,
- * user_context} -- NOT the same shape as DecryptInitRequest: it carries no
+/* DecryptMessageInitRequest is {key_name, scope_params, user_context} --
+ * NOT the same shape as DecryptInitRequest: it carries no
  * metadata field, because there is no session-wide nonce to recover here
  * (each message gets its own, supplied fresh at agc_decrypt_message_begin()
  * or agc_decrypt_message()). Reusing agc_decrypt_init_request for this
@@ -149,7 +150,6 @@ typedef struct agc_encrypt_message_request {
 typedef struct agc_decrypt_message_init_request {
     size_t                    struct_size;
     const char               *key_name;           /* REQUIRED */
-    const char               *operation_id;
     const agc_encrypt_params *params;             /* REQUIRED -- must match encryption */
     agc_kv_list               user_context;
     agc_encoding              metadata_encoding;  /* REQUIRED; encoding the closing call emits */
@@ -160,14 +160,13 @@ typedef struct agc_decrypt_message_request {
     const char  *key_name;           /* REQUIRED */
     agc_slice    associated_data;
     agc_slice    ciphertext;
+    /* REQUIRED: the session from the matching *_message_init, as
+     * agc_session_id() returns it. */
+    const char  *operation_id;
 
-    /* The per-message metadata from the corresponding agc_encrypt_message()
-     * call -- not the session's. DecryptMessageRequest carries NO metadata
-     * field on the wire: this is declared divergence DV-04
-     * (RECONCILIATION_PLAN.md §4), because the function is structurally
-     * unusable without the per-message nonce, and a gRPC front-end recovers
-     * it from the same channel EncryptMessage's response used. Encoded,
-     * encoding byte first. */
+    /* REQUIRED: the per-message metadata from the corresponding
+     * agc_encrypt_message() call -- not the session's -- carrying this
+     * message's nonce. Encoded, encoding byte first. */
     agc_slice    metadata;
 
     agc_kv_list  user_context;
@@ -181,23 +180,19 @@ typedef struct agc_decrypt_message_request {
 typedef struct agc_sign_init_request {
     size_t                 struct_size;
     const char            *key_name;           /* REQUIRED */
-    const char            *operation_id;
     const agc_sign_params *params;             /* REQUIRED */
     agc_kv_list            user_context;
     agc_encoding           metadata_encoding;  /* REQUIRED */
 } agc_sign_init_request;
 
-/* Neither VerifyInitRequest nor VerifyFinalRequest carries a metadata field
- * on the wire (unlike single-shot VerifyRequest, which does) -- verified
- * directly against messages/signing.proto. Multi-part verification here
- * always uses the key's latest version; there is currently no wire-level
- * way to verify a multi-part signature made under a since-rotated key
- * version. Not a simplification introduced by this header. */
 typedef struct agc_verify_init_request {
     size_t                 struct_size;
     const char            *key_name;           /* REQUIRED */
-    const char            *operation_id;
     const agc_sign_params *params;             /* REQUIRED -- must match signing */
+    /* The signing metadata, encoded, encoding byte first: it names the key
+     * version, so a signature made before a rotation still verifies.
+     * {NULL,0} => the key's latest version. */
+    agc_slice              metadata;
     agc_kv_list            user_context;
     agc_encoding           metadata_encoding;  /* REQUIRED; encoding the closing call emits */
 } agc_verify_init_request;
@@ -210,21 +205,24 @@ typedef struct agc_sign_message_request {
     size_t       struct_size;
     const char  *key_name;           /* REQUIRED */
     agc_slice    message;
+    /* REQUIRED: the session from the matching *_message_init, as
+     * agc_session_id() returns it. */
+    const char  *operation_id;
     agc_kv_list  user_context;
     agc_encoding metadata_encoding;  /* REQUIRED */
 } agc_sign_message_request;
 
-/* VerifyMessageRequest carries no metadata field on the wire (unlike the
- * single-shot VerifyRequest, which does) -- verification here always uses
- * the key's latest version. This is a genuine asymmetry in the proto as
- * written, not a simplification introduced by this header: there is
- * currently no wire-level way to verify a message-based signature made
- * under a since-rotated key version. */
 typedef struct agc_verify_message_request {
     size_t       struct_size;
     const char  *key_name;
     agc_slice    message;
     agc_slice    signature;
+    /* The signing metadata, encoded, encoding byte first; {NULL,0} => the
+     * key's latest version. */
+    agc_slice    metadata;
+    /* REQUIRED: the session from the matching *_message_init, as
+     * agc_session_id() returns it. */
+    const char  *operation_id;
     agc_kv_list  user_context;
     agc_encoding metadata_encoding;  /* REQUIRED; encoding of the response's metadata */
 } agc_verify_message_request;
@@ -243,7 +241,6 @@ typedef struct agc_verify_message_request {
 typedef struct agc_digest_init_request {
     size_t                           struct_size;
     agc_hash_scope_spec              scope_spec;             /* REQUIRED */
-    const char                      *operation_id;
     const char                      *template_id;            /* optional; NULL => policy selects */
     const char                      *provider_id;            /* optional; NULL => policy selects */
     agc_kv_list                      provider_configuration; /* may be empty */
@@ -255,7 +252,6 @@ typedef struct agc_digest_init_request {
 typedef struct agc_xof_init_request {
     size_t                           struct_size;
     agc_hash_scope_spec              scope_spec;             /* REQUIRED */
-    const char                      *operation_id;
     const char                      *template_id;            /* optional; NULL => policy selects */
     const char                      *provider_id;            /* optional; NULL => policy selects */
     agc_kv_list                      provider_configuration; /* may be empty */

@@ -75,10 +75,9 @@ extern "C" {
 typedef struct agc_ctx agc_ctx;
 
 /* A stateful multi-part or message-based operation. Replaces the proto's
- * request-supplied `operation_id` string as the primary handle in this local
- * API; the string form is still available via agc_session_id() (and
- * accepted as an optional caller-supplied id at Init, matching the proto)
- * for cross-process correlation and for relaying a session elsewhere. */
+ * `operation_id` string as the primary handle in this local API; the string,
+ * issued by the service at Init, is available via agc_session_id() for
+ * cross-process correlation and for relaying a session elsewhere. */
 typedef struct agc_session agc_session;
 
 /* OperationMetadata is NOT an opaque handle any more: it is the
@@ -267,8 +266,7 @@ typedef enum agc_algorithm_output_kind {
  * Sessions (StreamingCryptoService, commit 9)
  * -------------------------------------------------------------------------- */
 
-/* The (client-supplied or library-generated) operation_id backing this
- * session. Needed only when relaying a session across a process boundary or
+/* The operation_id the service issued for this session at Init. Needed only when relaying a session across a process boundary or
  * correlating with audit logs. */
 AGC_API const char *agc_session_id(const agc_session *s);
 

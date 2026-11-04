@@ -8,7 +8,7 @@
  * that govern them.
  *
  * Three families of stateful operation, all keyed on an opaque agc_session
- * rather than the proto's request-supplied operation_id string:
+ * rather than the proto's operation_id string:
  *
  *   1. Multi-part      Init -> Update* -> Final              (PKCS#11 classic)
  *   2. Message-based   MessageInit -> ( Message
@@ -44,12 +44,12 @@
  *
  * SESSIONS, NOT STRINGS
  * ----------------------
- * See agc_core.h's Sessions section and RECONCILIATION_PLAN.md D10:
- * operation_id is a real, client-suppliable request field on the wire
- * (EncryptInitRequest.operation_id etc.), not server-generated as an earlier
- * draft of this reconciliation assumed. Every Init/MessageInit function
- * below accepts an optional caller-chosen id through its request struct;
- * agc_session_id() recovers it either way.
+ * See agc_core.h's Sessions section and RECONCILIATION_PLAN.md D10: the
+ * service issues the operation_id (EncryptInitResponse.operation_id etc.,
+ * since api v0.3.0); the caller cannot choose it. Every Init function
+ * returns a session, and agc_session_id() gives its operation_id, which
+ * the single-shot message functions (agc_encrypt_message, ...) name their
+ * session by, as the proto's requests do.
  *
  * STATUS: declarations only. Implementation follows; see
  * docs/implementation_progress.md.
@@ -97,15 +97,17 @@ AGC_API agc_rc agc_decrypt_final(agc_session *s, agc_stream_final_response *resp
  * 2. MESSAGE-BASED AEAD
  *    (Encrypt/DecryptMessageInit, Message, MessageBegin, MessageNext, MessageFinal)
  *
- * One session, many independent messages, each with its own nonce.
+ * One session, many independent messages, each with its own nonce (PKCS#11
+ * C_MessageEncryptInit). A message is either one agc_*_message() call, or
+ * Begin, then Next calls, the last with end_of_message set. Final ends the
+ * session, not a message.
  * ========================================================================== */
 
 AGC_API agc_rc agc_encrypt_message_init(agc_ctx *ctx, const agc_encrypt_init_request *req,
                                          agc_session **out_session);
 
-/* Single-shot message within the session: does not require Init first
- * (mirrors EncryptMessageRequest carrying key_name directly). Each call
- * produces its own nonce, reported in resp->metadata. Its output really is
+/* One whole message within the session req->operation_id. Each call produces
+ * its own nonce, reported in resp->metadata. Its output really is
  * ciphertext, so it shares agc_encrypt_response with agc_encrypt. */
 AGC_API agc_rc agc_encrypt_message(agc_ctx *ctx, const agc_encrypt_message_request *req,
                                     agc_encrypt_response *resp);
@@ -116,54 +118,40 @@ AGC_API agc_rc agc_encrypt_message(agc_ctx *ctx, const agc_encrypt_message_reque
 AGC_API agc_rc agc_encrypt_message_begin(agc_session *s, agc_slice associated_data,
                                           agc_stream_metadata_response *resp);
 
-/* Emits ciphertext for this chunk (EncryptMessageNextResponse carries only
- * ciphertext_chunk -- no end-of-message marker exists on the wire here, so
- * neither does one in this signature: see the comment on
- * agc_encrypt_message_final() below for what that structurally means). */
+/* Emits ciphertext for this chunk. With end_of_message set it ends the
+ * message: the output includes the authentication tag (Ciphertext || Tag),
+ * and the session is ready for the next message's Begin. */
 AGC_API agc_rc agc_encrypt_message_next(agc_session *s, agc_slice plaintext_chunk,
-                                         agc_stream_chunk_response *resp);
+                                         int end_of_message, agc_stream_chunk_response *resp);
 
-/* Completes the CURRENT (and, as specified, only) message and tears the
- * session down: emits ciphertext_final (the tag, per "Ciphertext || Tag")
- * plus metadata, exactly matching EncryptMessageFinalResponse. Because
- * EncryptMessageNext carries no per-message terminator, a session begun
- * with agc_encrypt_message_begin() can carry exactly one message before
- * this ends it -- a real limitation of the wire specification as written,
- * not a simplification introduced here (see docs/PROTO_RFCS.md RFC-03 for
- * the proposed fix). Multiple independent messages within one session ARE
- * supported via repeated agc_encrypt_message() single-shot calls, which need
- * no Begin/Next/Final at all. */
-AGC_API agc_rc agc_encrypt_message_final(agc_session *s, agc_stream_final_response *resp);
+/* Ends the session; EncryptMessageFinalResponse{success} collapses (D4). A
+ * message begun but not ended with end_of_message is discarded. */
+AGC_API agc_rc agc_encrypt_message_final(agc_session *s);
 
 AGC_API agc_rc agc_decrypt_message_init(agc_ctx *ctx, const agc_decrypt_message_init_request *req,
                                          agc_session **out_session);
 
-/* req->metadata is the per-message metadata from the corresponding
- * agc_encrypt_message() call, a declared divergence (DV-04); see the field's
- * comment in agc_stream_types.h. Its output really is plaintext, so it
- * shares agc_decrypt_response with agc_decrypt. */
+/* One whole message within the session req->operation_id; req->metadata is
+ * that message's metadata from agc_encrypt_message(). Its output really is
+ * plaintext, so it shares agc_decrypt_response with agc_decrypt. */
 AGC_API agc_rc agc_decrypt_message(agc_ctx *ctx, const agc_decrypt_message_request *req,
                                     agc_decrypt_response *resp);
 
 /* partial_metadata is the per-message metadata from
- * agc_encrypt_message_begin(), encoded, encoding byte first.
- * DecryptMessageBeginRequest carries no metadata field on the wire; this
- * parameter is the same declared divergence DV-04 -- the function is
- * structurally unusable without the per-message nonce, and a gRPC front-end
- * recovers it from the same channel EncryptMessageBegin's response used. */
+ * agc_encrypt_message_begin(), encoded, encoding byte first. */
 AGC_API agc_rc agc_decrypt_message_begin(agc_session *s, agc_slice associated_data,
                                           agc_slice partial_metadata);
 
-/* UNAUTHENTICATED OUTPUT until agc_decrypt_message_final() succeeds. */
+/* UNAUTHENTICATED OUTPUT until this message's end_of_message call succeeds.
+ * That call's chunk includes the tag, which is verified before the last
+ * plaintext is returned; on failure it returns
+ * AGC_ERR_CRYPTO_AUTHENTICATION_FAILED and writes nothing, and the caller
+ * must discard everything this message's Next calls produced. */
 AGC_API agc_rc agc_decrypt_message_next(agc_session *s, agc_slice ciphertext_chunk,
-                                         agc_stream_chunk_response *resp);
+                                         int end_of_message, agc_stream_chunk_response *resp);
 
-/* Verifies the tag and completes the session's one message (see the
- * agc_encrypt_message_final() comment on why "one message per session" is
- * the wire specification's own current limit, not a simplification here).
- * On failure returns AGC_ERR_CRYPTO_AUTHENTICATION_FAILED and writes
- * nothing; the caller must discard everything Next produced. */
-AGC_API agc_rc agc_decrypt_message_final(agc_session *s, agc_stream_final_response *resp);
+/* Ends the session; DecryptMessageFinalResponse{success} collapses (D4). */
+AGC_API agc_rc agc_decrypt_message_final(agc_session *s);
 
 /* ==========================================================================
  * 3. MULTI-PART SIGNING (SignInit/Update/Final, VerifyInit/Update/Final)
@@ -202,17 +190,15 @@ AGC_API agc_rc agc_sign_message(agc_ctx *ctx, const agc_sign_message_request *re
 
 AGC_API agc_rc agc_sign_message_begin(agc_session *s);
 
-/* SignMessageNextResponse is {bool success} -- no output, matching the
- * multi-part family's Update. */
-AGC_API agc_rc agc_sign_message_next(agc_session *s, agc_slice message_chunk);
+/* With end_of_message set, ends the message and fills *resp with the
+ * signature over everything absorbed since Begin, plus metadata
+ * (SignMessageNextResponse). Otherwise resp may be NULL and nothing is
+ * written. */
+AGC_API agc_rc agc_sign_message_next(agc_session *s, agc_slice message_chunk,
+                                      int end_of_message, agc_sign_response *resp);
 
-/* Completes the session's one message: returns the signature over
- * everything absorbed since Begin, plus metadata, matching
- * SignMessageFinalResponse{signature, metadata} exactly (unlike the AEAD
- * families, SignMessageNext genuinely has no output to withhold, so this
- * "one message per session" shape is simply how message-based signing
- * always worked here, not a limitation this reconciliation ran into). */
-AGC_API agc_rc agc_sign_message_final(agc_session *s, agc_sign_response *resp);
+/* Ends the session; SignMessageFinalResponse{success} collapses (D4). */
+AGC_API agc_rc agc_sign_message_final(agc_session *s);
 
 AGC_API agc_rc agc_verify_message_init(agc_ctx *ctx, const agc_verify_init_request *req,
                                         agc_session **out_session);
@@ -221,25 +207,17 @@ AGC_API agc_rc agc_verify_message(agc_ctx *ctx, const agc_verify_message_request
                                    agc_verify_response *resp);
 
 AGC_API agc_rc agc_verify_message_begin(agc_session *s);
-AGC_API agc_rc agc_verify_message_next(agc_session *s, agc_slice message_chunk);
+/* With end_of_message set, `signature` is REQUIRED and *resp receives this
+ * message's result (VerifyMessageNextResponse) under the fail-closed
+ * contract (D9): resp->valid is cleared first, and an invalid signature
+ * returns AGC_ERR_CRYPTO_SIGNATURE_INVALID. Otherwise signature is
+ * {NULL,0}, resp may be NULL, and nothing is written. */
+AGC_API agc_rc agc_verify_message_next(agc_session *s, agc_slice message_chunk,
+                                        int end_of_message, agc_slice signature,
+                                        agc_verify_response *resp);
 
-/* signature arrives here, matching VerifyMessageFinalRequest{operation_id,
- * signature} -- verification only makes sense once the whole message and
- * its signature are both known. Fail-closed contract applies to
- * resp->valid (D9). */
-AGC_API agc_rc agc_verify_message_final(agc_session *s, agc_slice signature,
-                                         agc_verify_response *resp);
-
-/* Note: there is no "5. Multi-part MAC" family here. MacScope has a
- * MAC_SCOPE_STREAMING = 2 value in the vocabulary, but the proto defines no
- * GenerateMACInit/Update/Final or VerifyMACInit/Update/Final RPCs to use it
- * -- verified directly against streaming_crypto_service.proto's RPC list
- * (43 RPCs total, none of them MAC-shaped). An earlier draft of this
- * reconciliation invented a 6-function MAC streaming family here; seeing a
- * vocabulary value with nothing to back it is exactly the kind of gap
- * worth raising with the specification rather than papering over locally
- * -- see docs/PROTO_RFCS.md RFC-13 and agc_ext.h for an opt-in,
- * clearly-labelled proposed family callers may enable. */
+/* Ends the session; VerifyMessageFinalResponse{success} collapses (D4). */
+AGC_API agc_rc agc_verify_message_final(agc_session *s);
 
 /* ==========================================================================
  * 5. MULTI-PART DIGEST (DigestInit/Update/Key/Final)

@@ -74,27 +74,6 @@ divergences:
     gateway_mapping: "-> {success: false, message}"
     rfc: null
 
-  - id: DV-04
-    summary: >
-      OperationMetadata metadata parameter added to agc_decrypt_init,
-      agc_decrypt_message, agc_decrypt_message_init -- fields absent from
-      DecryptInitRequest, DecryptMessageRequest, DecryptMessageBeginRequest
-      on the wire.
-    reason: >
-      Without the nonce/IV a provider cannot initialise decryption; these
-      functions are unimplementable without it. This is a real proto gap,
-      not a convenience.
-    scope:
-      - DecryptInit
-      - DecryptMessage
-      - DecryptMessageBegin
-    functions:
-      - agc_decrypt_init
-      - agc_decrypt_message
-      - agc_decrypt_message_init
-    gateway_mapping: "drop until RFC-04 lands; C-only sessions unaffected"
-    rfc: RFC-04
-
   - id: DV-05
     summary: "bool success + string message response fields not projected (14 messages)."
     reason: >
