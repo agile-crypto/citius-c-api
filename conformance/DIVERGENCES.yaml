@@ -301,3 +301,19 @@ divergences:
       PolicyDecisionDetails: [allowed_operations]
     gateway_mapping: "left empty"
     rfc: null
+
+  - id: DV-15
+    summary: WIRE_V1 cannot encode OperationMetadata.digest_hash.
+    reason: >
+      WIRE_V1 is a fixed layout with no unknown-field mechanism, so it
+      cannot grow (docs/representing_metadata.md §6.7). As for an encoding
+      token v1 cannot express, encoding a set digest_hash in WIRE_V1 fails;
+      digest-signing metadata is PROTOBUF-only until a v2 layout exists.
+    scope:
+      - DigestSign
+      - agc_metadata_encode (AGC_ENCODING_WIRE_V1)
+    functions:
+      - agc_digest_sign
+      - agc_metadata_encode
+    gateway_mapping: "PROTOBUF carries digest_hash as field 5"
+    rfc: null

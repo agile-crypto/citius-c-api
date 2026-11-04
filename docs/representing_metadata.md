@@ -667,6 +667,13 @@ v1 bytes are never reinterpreted. Growth within v1 is not possible by design:
 the format has no unknown-field mechanism, which is the property that makes
 it unique and O(1) to parse.
 
+`OperationMetadata.digest_hash` (field 5, added with the v0.3.0 descriptor)
+has no slot in v1. Like an `encoding` token v1 cannot express, a
+`digest_hash` other than UNSPECIFIED makes WIRE_V1 encoding fail, with
+AGC_ERR_INVALID_ARGUMENT: digest-signing metadata is PROTOBUF-only until a
+v2 layout gives it a byte. Every v1 blob decodes with `digest_hash`
+UNSPECIFIED, which is correct for every operation but digest signing.
+
 ## 7. Envelope: metadata and ciphertext in one blob
 
 Metadata and the artifact it describes are always one-to-one (the nonce is

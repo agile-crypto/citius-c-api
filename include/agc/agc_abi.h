@@ -38,12 +38,15 @@ extern "C" {
  * ABI / API version
  * -------------------------------------------------------------------------- */
 
-#define AGC_API_VERSION_MAJOR 1
+/* 2.0 mirrors api v0.3.0. It is not binary compatible with 1.0: records
+ * gained and lost fields where the proto did, so a 1.0 caller must be
+ * rebuilt. Within 2.x, struct_size keeps callers compatible (below). */
+#define AGC_API_VERSION_MAJOR 2
 #define AGC_API_VERSION_MINOR 0
 #define AGC_API_VERSION_PATCH 0
 
 /* Matches OperationMetadata.api_version ("major.minor"). */
-#define AGC_API_VERSION_STRING "1.0"
+#define AGC_API_VERSION_STRING "2.0"
 
 #if defined(_WIN32)
 #  if defined(AGC_BUILDING_DLL)
@@ -66,9 +69,12 @@ extern "C" {
  * MUST set it to sizeof(the struct they compiled against); the library uses
  * it to decide which trailing fields are present. This is the C substitute
  * for protobuf's free forward compatibility (RECONCILIATION_PLAN.md D7): a
- * caller built against 1.0 passing a smaller struct to a 1.1 library gets
- * defaults for the tail; a 1.1 caller passing a larger struct to a 1.0
- * library gets AGC_ERR_ABI_MISMATCH rather than a misread field. */
+ * caller built against 2.0 passing a smaller struct to a 2.1 library gets
+ * defaults for the tail; a 2.1 caller passing a larger struct to a 2.0
+ * library gets AGC_ERR_ABI_MISMATCH rather than a misread field. This holds
+ * within one major version only: a minor version appends fields solely to
+ * structs that are not embedded in another, since growing an embedded
+ * struct moves the fields after it. */
 #define AGC_INIT(p) \
     do { memset((p), 0, sizeof(*(p))); (p)->struct_size = sizeof(*(p)); } while (0)
 

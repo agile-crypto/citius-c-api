@@ -124,6 +124,15 @@ typedef struct agc_metadata {
     agc_provider_output provider_output;
     agc_kv_list         user_context;   /* items array and NUL-terminated strings in the result's
                                          * storage after decode; caller memory when built by hand */
+
+    /* The hash that produced the digest of a digest-sign operation; set by
+     * the library, UNSPECIFIED for every other operation. agc_digest_verify
+     * takes the hash from here. A prehashed template accepts several
+     * hashes, so the template alone does not say which one was used.
+     * WIRE_V1 has no slot for it: encoding a set digest_hash in WIRE_V1
+     * fails (docs/representing_metadata.md §6.7), so digest signing
+     * requires AGC_ENCODING_PROTOBUF. */
+    agc_hash_algorithm  digest_hash;
 } agc_metadata;
 
 /* The decode result: the record plus the region it points into. Every

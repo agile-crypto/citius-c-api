@@ -31,7 +31,7 @@ extern "C" {
  * as above: minima in a request, provided characteristics in a template.
  * Never passed by pointer on its own (only embedded in a *ScopeSpec, which is
  * itself embedded in agc_scope_spec), so it does not carry its own
- * struct_size — the outer agc_scope_spec.struct_size is what a 1.0/1.1
+ * struct_size — the outer agc_scope_spec.struct_size is what a version
  * mismatch is checked against (D7). */
 typedef struct agc_security_properties {
     uint32_t                security_strength_bits;  /* 0 = unspecified */
@@ -50,6 +50,23 @@ typedef struct agc_signature_scope_spec {
     agc_security_properties security;
     agc_tribool             non_malleable;
     agc_tribool             deterministic;
+
+    /* Digest hashes a PREHASHED or PREHASHED_WITH_CONTEXT scope accepts, in
+     * order of preference: the first is the preferred hash. Empty for the
+     * other scopes.
+     *   Template (agc_template_info): what the template can sign without
+     *       weakening its security; never empty for a prehashed scope.
+     *   Request (agc_create_key_params, agc_transform_key_params): a
+     *       requirement: the template must accept every entry. Empty means
+     *       none.
+     *   Key (agc_key_info): what this key version accepts; never empty for
+     *       a prehashed version.
+     * Hash with accepted_digest_hashes[0] of the key's scope spec
+     * (agc_read_key), so the hash can change without code changes. In
+     * output records the array is in the enclosing record's storage. */
+    const agc_hash_algorithm *accepted_digest_hashes;
+    size_t                    accepted_digest_hashes_count;
+
     agc_kv_list             additional_properties;
 } agc_signature_scope_spec;
 

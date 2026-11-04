@@ -151,15 +151,17 @@ typedef struct agc_digest_sign_request {
     agc_slice              digest;              /* pre-computed */
     const agc_sign_params *params;              /* REQUIRED */
 
-    /* REQUIRED. Declares which hash produced `digest`. Validated against
-     * agc_hash_algorithm_output_len(), which is what stops a SHA-1 digest
-     * being presented as SHA-256 to bypass a policy that forbids SHA-1.
-     * UNSPECIFIED is rejected. */
+    /* REQUIRED. Declares which hash produced `digest`. It must be one of
+     * the key version's accepted_digest_hashes (agc_read_key) and the digest
+     * must have its length (agc_hash_algorithm_output_len), which is what
+     * stops a SHA-1 digest being presented as SHA-256. UNSPECIFIED and OTHER
+     * are rejected. The library records it in the metadata's digest_hash. */
     agc_hash_algorithm     hash_algorithm;
-    const char            *hash_algorithm_oid;  /* required in practice when OTHER */
 
     agc_kv_list            user_context;
-    agc_encoding           metadata_encoding;   /* REQUIRED */
+    /* REQUIRED. AGC_ENCODING_PROTOBUF: WIRE_V1 cannot carry the digest_hash
+     * this operation records (DV-16). */
+    agc_encoding           metadata_encoding;
 } agc_digest_sign_request;
 
 typedef struct agc_digest_verify_request {
@@ -167,10 +169,11 @@ typedef struct agc_digest_verify_request {
     const char            *key_name;
     agc_slice              digest;
     agc_slice              signature;
-    agc_slice              metadata;            /* encoded, encoding byte first; {NULL,0} => latest version */
+    /* REQUIRED: the metadata agc_digest_sign returned, encoded, encoding
+     * byte first. It names the key version and, in digest_hash, the hash
+     * that produced the digest. */
+    agc_slice              metadata;
     const agc_sign_params *params;
-    agc_hash_algorithm     hash_algorithm;      /* REQUIRED; must match signing */
-    const char            *hash_algorithm_oid;
     agc_kv_list            user_context;
 } agc_digest_verify_request;
 
