@@ -116,6 +116,7 @@ typedef struct agc_generic_secret_scope_spec {
     agc_kv_list              additional_properties;
 } agc_generic_secret_scope_spec;
 
+/* Reserved; see AGC_SCOPE_KIND_ASYMMETRIC_ENCRYPTION. */
 typedef struct agc_asymmetric_encryption_scope_spec {
     agc_asymmetric_encryption_scope scope;
     agc_security_properties         security;
@@ -144,6 +145,9 @@ typedef enum agc_scope_kind {
     AGC_SCOPE_KIND_SYMMETRIC_CIPHER      = 9,
     AGC_SCOPE_KIND_GENERIC_SECRET        = 10,
     AGC_SCOPE_KIND_DISK_ENCRYPTION       = 11,
+    /* Reserved: the proto defines AsymmetricEncryptionScope, but the
+     * service supports no such scope yet. A scope spec of this kind is
+     * refused with AGC_ERR_INVALID_ARGUMENT. */
     AGC_SCOPE_KIND_ASYMMETRIC_ENCRYPTION = 12
     AGC_ENUM32(agc_scope_kind)
 } agc_scope_kind;
