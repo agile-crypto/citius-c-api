@@ -159,8 +159,15 @@ typedef struct agc_ctx_config {
      * library. Every other scheme is reserved and refused with
      * AGC_ERR_NOT_IMPLEMENTED, as is any scheme this build does not support.
      * One store is used by one context at a time; a second context opened on
-     * the same store fails rather than share it. */
+     * the same store fails rather than share it (AGC_ERR_CRYPTO_CONCURRENT_ACCESS). */
     agc_str  key_store_uri;
+
+    /* REQUIRED with a "file:" key_store_uri: a file holding the 32-byte key
+     * every stored key record is sealed under (AES-256-GCM, bound to the
+     * key's id). It must be a regular file that neither group nor others can
+     * read; it is read once, at agc_ctx_open(). Losing it loses the stored
+     * keys. Ignored when key_store_uri is NULL. */
+    agc_str  key_store_wrapping_key_path;
 } agc_ctx_config;
 
 /* All agc_str/agc_slice fields of *cfg are copied; the caller need not keep
