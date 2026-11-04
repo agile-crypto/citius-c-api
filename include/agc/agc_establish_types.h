@@ -143,8 +143,10 @@ typedef struct agc_derive_key_request {
 typedef struct agc_key_agreement_request {
     size_t                struct_size;
     const char           *private_key_name;          /* REQUIRED -- our side */
-    agc_slice             peer_public_key;           /* REQUIRED -- their side, algorithm-native raw
-                                                        encoding; borrowed for the call */
+    agc_slice             peer_public_key;           /* REQUIRED -- their side; borrowed for the call */
+    /* Encoding of peer_public_key: UNSPECIFIED (the default) is the
+     * algorithm-native raw encoding; SPKI and PEM are also accepted. */
+    agc_key_format        peer_public_key_format;
     const char           *shared_secret_name;        /* REQUIRED -- name for the result */
     const char           *shared_secret_template_id; /* NULL => policy selects */
     const agc_agreement_params *params;              /* REQUIRED -- the oneof is required */

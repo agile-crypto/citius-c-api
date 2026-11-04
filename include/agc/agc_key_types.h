@@ -115,6 +115,17 @@ typedef struct agc_key_info {
 
     /* Properties of the implementation serving this key. */
     agc_impl_props          implementation_props;
+
+    /* Cryptoperiod (NIST SP 800-57 Part 1 §5.3). Before activation_time the
+     * key is PRE_ACTIVE; after expiration_time, protect operations (encrypt,
+     * sign, wrap) fail with AGC_ERR_CRYPTO_KEY_EXPIRED while process
+     * operations (decrypt, verify, unwrap) stay available per policy.
+     * Absent: usable from creation, and no automatic expiry. */
+    agc_timestamp           activation_time;
+    agc_timestamp           expiration_time;
+
+    /* How the key material came into existence. Immutable. */
+    agc_key_origin          origin;
 } agc_key_info;
 
 /* The single-key response, shared by every call that returns one
@@ -145,6 +156,11 @@ typedef struct agc_create_key_params {
     const char           *template_id; /* NULL => policy selects */
 
     const agc_provider_requirements *provider_requirements; /* NULL => no filter */
+
+    /* Optional cryptoperiod bounds; absent => the governing policy's
+     * defaults. Semantics as in agc_key_info. */
+    agc_timestamp activation_time;
+    agc_timestamp expiration_time;
 } agc_create_key_params;
 
 /* --------------------------------------------------------------------------
@@ -384,6 +400,13 @@ typedef struct agc_export_key_response {
 
     agc_buf         storage;       /* IN: caller region for key_info's strings, key bytes and map */
     size_t          storage_used;  /* OUT: bytes consumed, or required */
+
+    /* Key check value of the exported material, for integrity checking
+     * before use (e.g. an ANSI X9.24 KCV; algorithm-dependent, documented
+     * by the provider). Two-call like `material`; kcv_len 0 if the provider
+     * computes none. Not secret. */
+    agc_buf         kcv;           /* IN: caller region. OUT: written */
+    size_t          kcv_len;       /* OUT: bytes written, or required */
 } agc_export_key_response;
 
 typedef struct agc_import_key_params {
@@ -396,6 +419,10 @@ typedef struct agc_import_key_params {
     const char     *provider_id;
     agc_kv_list     provider_configuration;
     const char     *template_id;         /* REQUIRED by the proto */
+    /* Optional provider- or vendor-specific evidence that the material was
+     * generated in a trusted environment (BYOK); the governing policy may
+     * require it. {NULL, 0} for none. */
+    agc_slice       key_attestation;
 } agc_import_key_params;
 
 #ifdef __cplusplus

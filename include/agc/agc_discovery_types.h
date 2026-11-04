@@ -232,6 +232,13 @@ typedef struct agc_template_info {
      * has_security_guarantees is 0 when the catalog published none. */
     int                            has_security_guarantees;
     agc_security_guarantees        security_guarantees;
+
+    /* Key-material compatibility family, used to decide whether an existing
+     * key can be kept under another template (agc_transform_key). Distinct
+     * from cyclonedx.algorithm_family: e.g. RSASSA-PSS and RSAES-OAEP may
+     * share generic RSA material. "" means no compatibility is declared,
+     * which fails closed. NUL-terminated, in storage. */
+    const char                    *key_material_family;
 } agc_template_info;
 
 /* The single-template response, shared by agc_get_template and the

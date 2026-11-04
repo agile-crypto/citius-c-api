@@ -85,7 +85,7 @@ typedef struct agc_provider_template_support {
     int            has_implementation;  /* proto message presence */
     agc_impl_props implementation;      /* per-template override of the provider default */
     const char    *notes;               /* NUL-terminated; "" if none */
-    int            enabled;             /* matches the proto field name and polarity */
+    int            disabled;            /* matches the proto: 0 (the default) = enabled */
 } agc_provider_template_support;
 
 /* ProviderInfo: a provider TYPE and its capabilities. */
@@ -158,7 +158,7 @@ typedef struct agc_provider_instance {
      * map. */
     agc_kv_list    configuration;
 
-    int            enabled;       /* matches the proto field name and polarity */
+    int            disabled;      /* matches the proto: 0 (the default) = enabled */
 
     /* Per-instance override of the provider type's default implementation
      * properties. */
@@ -196,7 +196,7 @@ typedef struct agc_match_providers_request {
     size_t                           struct_size;
     const char                      *template_id;   /* REQUIRED */
     const agc_provider_requirements *requirements;  /* NULL => no filter */
-    int                              enabled_only;  /* matches the proto field name and polarity */
+    int                              include_disabled; /* matches the proto: 0 (the default) = enabled only */
 } agc_match_providers_request;
 
 /* MatchedProvider: one instance that satisfies the requirements. Array

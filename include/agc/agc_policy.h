@@ -42,19 +42,23 @@ extern "C" {
  * Policy CRUD
  * -------------------------------------------------------------------------- */
 
-/* CreateCryptoPolicyResponse is {success, message}; both collapse into the
- * return code and agc_last_error (D4), so there is no response parameter. */
-AGC_API agc_rc agc_create_policy(agc_ctx *ctx, const agc_create_policy_request *req);
+/* CreateCryptoPolicyResponse is {success, message, version}: success and
+ * message collapse into the return code and agc_last_error (D4); version
+ * (1 for a new policy) goes to *out_version, which may be NULL. */
+AGC_API agc_rc agc_create_policy(agc_ctx *ctx, const agc_create_policy_request *req,
+                                  int64_t *out_version);
 
-/* UpdateCryptoPolicyResponse is {success, message}; both collapse (D4). */
-AGC_API agc_rc agc_update_policy(agc_ctx *ctx, const agc_update_policy_request *req);
+/* UpdateCryptoPolicyResponse is {success, message, version}; as for create,
+ * the new version goes to *out_version, which may be NULL. */
+AGC_API agc_rc agc_update_policy(agc_ctx *ctx, const agc_update_policy_request *req,
+                                  int64_t *out_version);
 
 /* ReadCryptoPolicyRequest is {name}, flattened to a bare string. */
 AGC_API agc_rc agc_read_policy(agc_ctx *ctx, const char *name,
                                 agc_read_policy_response *resp);
 
 /* DeleteCryptoPolicyRequest is {name}, flattened; DeleteCryptoPolicyResponse
- * is {success}, which collapses (D4). Fails while keys are still bound to
+ * is {success, message}, which collapse (D4). Fails while keys are still bound to
  * the policy (referential integrity); the reason is available from
  * agc_last_error(). */
 AGC_API agc_rc agc_delete_policy(agc_ctx *ctx, const char *name);

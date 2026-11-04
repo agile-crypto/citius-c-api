@@ -72,16 +72,21 @@ AGC_API void   agc_key_iter_free(agc_key_iter *it);
  * DeleteKey
  * -------------------------------------------------------------------------- */
 
-/* Zeroizes key material in the provider -- irreversible. */
-AGC_API agc_rc agc_delete_key(agc_ctx *ctx, const char *key_name);
+/* Zeroizes key material in the provider -- irreversible. The key record is
+ * kept in DESTROYED state for audit (NIST SP 800-57 §8.3) unless
+ * remove_metadata is non-zero, which removes it too, where retention policy
+ * allows. */
+AGC_API agc_rc agc_delete_key(agc_ctx *ctx, const char *key_name, int remove_metadata);
 
 /* --------------------------------------------------------------------------
  * RotateKey
  * -------------------------------------------------------------------------- */
 
-/* RotateKeyRequest is `{name}` on the wire.
+/* RotateKeyRequest is `{name, reason}` on the wire. `reason` goes to the
+ * audit trail (e.g. "scheduled", "suspected-compromise"); NULL for none.
  * *resp describes the new version's metadata. */
-AGC_API agc_rc agc_rotate_key(agc_ctx *ctx, const char *key_name, agc_key_info_response *resp);
+AGC_API agc_rc agc_rotate_key(agc_ctx *ctx, const char *key_name, const char *reason,
+                               agc_key_info_response *resp);
 
 /* --------------------------------------------------------------------------
  * TransformKey

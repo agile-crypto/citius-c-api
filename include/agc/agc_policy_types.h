@@ -65,6 +65,7 @@ typedef struct agc_create_policy_request {
     size_t      struct_size;
     const char *name;             /* REQUIRED */
     const char *policy_document;  /* REQUIRED -- opaque to this API */
+    const char *format;           /* "json", "rego", ...; NULL or "" => the service's default */
 } agc_create_policy_request;
 
 /* UpdateCryptoPolicyRequest. The document replaces the existing one
@@ -73,6 +74,11 @@ typedef struct agc_update_policy_request {
     size_t      struct_size;
     const char *name;             /* REQUIRED */
     const char *policy_document;  /* REQUIRED -- replaces the existing document */
+    const char *format;           /* NULL or "" => the service's default */
+    /* Optimistic concurrency: if > 0, the update applies only when the
+     * stored version equals it, else AGC_ERR_CRYPTO_POLICY_VERSION_CONFLICT.
+     * 0 means last writer wins (NOT RECOMMENDED for shared policies). */
+    int64_t     expected_version;
 } agc_update_policy_request;
 
 /* ReadCryptoPolicyResponse {name, policy_document}. Caller-allocated; see
@@ -82,6 +88,10 @@ typedef struct agc_read_policy_response {
     size_t      struct_size;
     const char *name;             /* NUL-terminated, in storage */
     const char *policy_document;  /* NUL-terminated, in storage */
+    const char *format;           /* NUL-terminated, in storage */
+    int64_t     version;          /* pass as expected_version for a safe update */
+    agc_timestamp created_at;
+    agc_timestamp updated_at;
     agc_buf     storage;          /* IN: caller region */
     size_t      storage_used;     /* OUT: bytes consumed, or required */
 } agc_read_policy_response;
@@ -111,6 +121,8 @@ typedef struct agc_policy_summary {
     const char   *name;          /* NUL-terminated, in the response's storage */
     agc_timestamp created_at;
     agc_timestamp updated_at;
+    int64_t       version;
+    const char   *format;        /* NUL-terminated, in the response's storage */
 } agc_policy_summary;
 
 /* The single-summary response, filled by the ListCryptoPolicies iterator. It

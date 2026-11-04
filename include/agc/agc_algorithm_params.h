@@ -133,9 +133,10 @@ typedef struct agc_ed25519_params {
     agc_ed25519_variant variant;
 } agc_ed25519_params;
 
+/* The Ed448ctx/Ed448ph context is an operation parameter
+ * (agc_sign_params.u.domain_context), not part of the algorithm. */
 typedef struct agc_ed448_params {
     agc_ed448_variant variant;
-    agc_slice         context;      /* data in the enclosing record's storage; at most 255 bytes */
 } agc_ed448_params;
 
 typedef enum agc_rsa_pss_salt_length_mode {
