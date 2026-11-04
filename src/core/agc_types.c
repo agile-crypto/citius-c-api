@@ -4,454 +4,6 @@
 #include "agc_types.h"
 #include <string.h>
 
-const char *agc_signature_scope_name(agc_signature_scope v)
-{
-    switch (v) {
-    case AGC_SIGNATURE_SCOPE_UNSPECIFIED: return "SIGNATURE_SCOPE_UNSPECIFIED";
-    case AGC_SIGNATURE_SCOPE_STANDARD: return "SIGNATURE_SCOPE_STANDARD";
-    case AGC_SIGNATURE_SCOPE_WITH_CONTEXT: return "SIGNATURE_SCOPE_WITH_CONTEXT";
-    case AGC_SIGNATURE_SCOPE_PREHASHED: return "SIGNATURE_SCOPE_PREHASHED";
-    case AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT: return "SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_signature_scope_from_name(const char *name, agc_signature_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "SIGNATURE_SCOPE_UNSPECIFIED") == 0) { *out = AGC_SIGNATURE_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "SIGNATURE_SCOPE_STANDARD") == 0) { *out = AGC_SIGNATURE_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "SIGNATURE_SCOPE_WITH_CONTEXT") == 0) { *out = AGC_SIGNATURE_SCOPE_WITH_CONTEXT; return AGC_OK; }
-    if (strcmp(name, "SIGNATURE_SCOPE_PREHASHED") == 0) { *out = AGC_SIGNATURE_SCOPE_PREHASHED; return AGC_OK; }
-    if (strcmp(name, "SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT") == 0) { *out = AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_aead_scope_name(agc_aead_scope v)
-{
-    switch (v) {
-    case AGC_AEAD_SCOPE_UNSPECIFIED: return "AEAD_SCOPE_UNSPECIFIED";
-    case AGC_AEAD_SCOPE_STANDARD: return "AEAD_SCOPE_STANDARD";
-    case AGC_AEAD_SCOPE_DETERMINISTIC: return "AEAD_SCOPE_DETERMINISTIC";
-    case AGC_AEAD_SCOPE_STREAMING: return "AEAD_SCOPE_STREAMING";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_aead_scope_from_name(const char *name, agc_aead_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "AEAD_SCOPE_UNSPECIFIED") == 0) { *out = AGC_AEAD_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "AEAD_SCOPE_STANDARD") == 0) { *out = AGC_AEAD_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "AEAD_SCOPE_DETERMINISTIC") == 0) { *out = AGC_AEAD_SCOPE_DETERMINISTIC; return AGC_OK; }
-    if (strcmp(name, "AEAD_SCOPE_STREAMING") == 0) { *out = AGC_AEAD_SCOPE_STREAMING; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_mac_scope_name(agc_mac_scope v)
-{
-    switch (v) {
-    case AGC_MAC_SCOPE_UNSPECIFIED: return "MAC_SCOPE_UNSPECIFIED";
-    case AGC_MAC_SCOPE_STANDARD: return "MAC_SCOPE_STANDARD";
-    case AGC_MAC_SCOPE_STREAMING: return "MAC_SCOPE_STREAMING";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_mac_scope_from_name(const char *name, agc_mac_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "MAC_SCOPE_UNSPECIFIED") == 0) { *out = AGC_MAC_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "MAC_SCOPE_STANDARD") == 0) { *out = AGC_MAC_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "MAC_SCOPE_STREAMING") == 0) { *out = AGC_MAC_SCOPE_STREAMING; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_kem_scope_name(agc_kem_scope v)
-{
-    switch (v) {
-    case AGC_KEM_SCOPE_UNSPECIFIED: return "KEM_SCOPE_UNSPECIFIED";
-    case AGC_KEM_SCOPE_STANDARD: return "KEM_SCOPE_STANDARD";
-    case AGC_KEM_SCOPE_HYBRID: return "KEM_SCOPE_HYBRID";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_kem_scope_from_name(const char *name, agc_kem_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KEM_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEM_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KEM_SCOPE_STANDARD") == 0) { *out = AGC_KEM_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "KEM_SCOPE_HYBRID") == 0) { *out = AGC_KEM_SCOPE_HYBRID; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_key_agreement_scope_name(agc_key_agreement_scope v)
-{
-    switch (v) {
-    case AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED: return "KEY_AGREEMENT_SCOPE_UNSPECIFIED";
-    case AGC_KEY_AGREEMENT_SCOPE_STANDARD: return "KEY_AGREEMENT_SCOPE_STANDARD";
-    case AGC_KEY_AGREEMENT_SCOPE_HYBRID: return "KEY_AGREEMENT_SCOPE_HYBRID";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_key_agreement_scope_from_name(const char *name, agc_key_agreement_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KEY_AGREEMENT_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KEY_AGREEMENT_SCOPE_STANDARD") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "KEY_AGREEMENT_SCOPE_HYBRID") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_HYBRID; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_kdf_scope_name(agc_kdf_scope v)
-{
-    switch (v) {
-    case AGC_KDF_SCOPE_UNSPECIFIED: return "KDF_SCOPE_UNSPECIFIED";
-    case AGC_KDF_SCOPE_EXTRACT_EXPAND: return "KDF_SCOPE_EXTRACT_EXPAND";
-    case AGC_KDF_SCOPE_PASSWORD: return "KDF_SCOPE_PASSWORD";
-    case AGC_KDF_SCOPE_AGREEMENT: return "KDF_SCOPE_AGREEMENT";
-    case AGC_KDF_SCOPE_COUNTER: return "KDF_SCOPE_COUNTER";
-    case AGC_KDF_SCOPE_TLS: return "KDF_SCOPE_TLS";
-    case AGC_KDF_SCOPE_GOST: return "KDF_SCOPE_GOST";
-    case AGC_KDF_SCOPE_VENDOR: return "KDF_SCOPE_VENDOR";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_kdf_scope_from_name(const char *name, agc_kdf_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KDF_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KDF_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_EXTRACT_EXPAND") == 0) { *out = AGC_KDF_SCOPE_EXTRACT_EXPAND; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_PASSWORD") == 0) { *out = AGC_KDF_SCOPE_PASSWORD; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_AGREEMENT") == 0) { *out = AGC_KDF_SCOPE_AGREEMENT; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_COUNTER") == 0) { *out = AGC_KDF_SCOPE_COUNTER; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_TLS") == 0) { *out = AGC_KDF_SCOPE_TLS; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_GOST") == 0) { *out = AGC_KDF_SCOPE_GOST; return AGC_OK; }
-    if (strcmp(name, "KDF_SCOPE_VENDOR") == 0) { *out = AGC_KDF_SCOPE_VENDOR; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_hash_scope_name(agc_hash_scope v)
-{
-    switch (v) {
-    case AGC_HASH_SCOPE_UNSPECIFIED: return "HASH_SCOPE_UNSPECIFIED";
-    case AGC_HASH_SCOPE_STANDARD: return "HASH_SCOPE_STANDARD";
-    case AGC_HASH_SCOPE_XOF: return "HASH_SCOPE_XOF";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_hash_scope_from_name(const char *name, agc_hash_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "HASH_SCOPE_UNSPECIFIED") == 0) { *out = AGC_HASH_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "HASH_SCOPE_STANDARD") == 0) { *out = AGC_HASH_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "HASH_SCOPE_XOF") == 0) { *out = AGC_HASH_SCOPE_XOF; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_key_wrapping_scope_name(agc_key_wrapping_scope v)
-{
-    switch (v) {
-    case AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED: return "KEY_WRAPPING_SCOPE_UNSPECIFIED";
-    case AGC_KEY_WRAPPING_SCOPE_STANDARD: return "KEY_WRAPPING_SCOPE_STANDARD";
-    case AGC_KEY_WRAPPING_SCOPE_WITH_PADDING: return "KEY_WRAPPING_SCOPE_WITH_PADDING";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_key_wrapping_scope_from_name(const char *name, agc_key_wrapping_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KEY_WRAPPING_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KEY_WRAPPING_SCOPE_STANDARD") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "KEY_WRAPPING_SCOPE_WITH_PADDING") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_WITH_PADDING; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_symmetric_cipher_scope_name(agc_symmetric_cipher_scope v)
-{
-    switch (v) {
-    case AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED: return "SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED";
-    case AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK: return "SYMMETRIC_CIPHER_SCOPE_BLOCK";
-    case AGC_SYMMETRIC_CIPHER_SCOPE_STREAM: return "SYMMETRIC_CIPHER_SCOPE_STREAM";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_symmetric_cipher_scope_from_name(const char *name, agc_symmetric_cipher_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_BLOCK") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK; return AGC_OK; }
-    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_STREAM") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_STREAM; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_disk_encryption_scope_name(agc_disk_encryption_scope v)
-{
-    switch (v) {
-    case AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED: return "DISK_ENCRYPTION_SCOPE_UNSPECIFIED";
-    case AGC_DISK_ENCRYPTION_SCOPE_STANDARD: return "DISK_ENCRYPTION_SCOPE_STANDARD";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_disk_encryption_scope_from_name(const char *name, agc_disk_encryption_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "DISK_ENCRYPTION_SCOPE_UNSPECIFIED") == 0) { *out = AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "DISK_ENCRYPTION_SCOPE_STANDARD") == 0) { *out = AGC_DISK_ENCRYPTION_SCOPE_STANDARD; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_generic_secret_scope_name(agc_generic_secret_scope v)
-{
-    switch (v) {
-    case AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED: return "GENERIC_SECRET_SCOPE_UNSPECIFIED";
-    case AGC_GENERIC_SECRET_SCOPE_STANDARD: return "GENERIC_SECRET_SCOPE_STANDARD";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_generic_secret_scope_from_name(const char *name, agc_generic_secret_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "GENERIC_SECRET_SCOPE_UNSPECIFIED") == 0) { *out = AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "GENERIC_SECRET_SCOPE_STANDARD") == 0) { *out = AGC_GENERIC_SECRET_SCOPE_STANDARD; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_asymmetric_encryption_scope_name(agc_asymmetric_encryption_scope v)
-{
-    switch (v) {
-    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED: return "ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED";
-    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD: return "ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD";
-    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW: return "ASYMMETRIC_ENCRYPTION_SCOPE_RAW";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_asymmetric_encryption_scope_from_name(const char *name, agc_asymmetric_encryption_scope *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD; return AGC_OK; }
-    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_RAW") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_key_lifecycle_state_name(agc_key_lifecycle_state v)
-{
-    switch (v) {
-    case AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED: return "KEY_LIFECYCLE_STATE_UNSPECIFIED";
-    case AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE: return "KEY_LIFECYCLE_STATE_PRE_ACTIVE";
-    case AGC_KEY_LIFECYCLE_STATE_ACTIVE: return "KEY_LIFECYCLE_STATE_ACTIVE";
-    case AGC_KEY_LIFECYCLE_STATE_SUSPENDED: return "KEY_LIFECYCLE_STATE_SUSPENDED";
-    case AGC_KEY_LIFECYCLE_STATE_DEACTIVATED: return "KEY_LIFECYCLE_STATE_DEACTIVATED";
-    case AGC_KEY_LIFECYCLE_STATE_COMPROMISED: return "KEY_LIFECYCLE_STATE_COMPROMISED";
-    case AGC_KEY_LIFECYCLE_STATE_DESTROYED: return "KEY_LIFECYCLE_STATE_DESTROYED";
-    case AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED: return "KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_key_lifecycle_state_from_name(const char *name, agc_key_lifecycle_state *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_UNSPECIFIED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_PRE_ACTIVE") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_ACTIVE") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_ACTIVE; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_SUSPENDED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_SUSPENDED; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_DEACTIVATED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DEACTIVATED; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_COMPROMISED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_COMPROMISED; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_DESTROYED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DESTROYED; return AGC_OK; }
-    if (strcmp(name, "KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_nist_security_level_name(agc_nist_security_level v)
-{
-    switch (v) {
-    case AGC_NIST_SECURITY_LEVEL_UNSPECIFIED: return "NIST_SECURITY_LEVEL_UNSPECIFIED";
-    case AGC_NIST_SECURITY_LEVEL_1: return "NIST_SECURITY_LEVEL_1";
-    case AGC_NIST_SECURITY_LEVEL_2: return "NIST_SECURITY_LEVEL_2";
-    case AGC_NIST_SECURITY_LEVEL_3: return "NIST_SECURITY_LEVEL_3";
-    case AGC_NIST_SECURITY_LEVEL_4: return "NIST_SECURITY_LEVEL_4";
-    case AGC_NIST_SECURITY_LEVEL_5: return "NIST_SECURITY_LEVEL_5";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_nist_security_level_from_name(const char *name, agc_nist_security_level *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "NIST_SECURITY_LEVEL_UNSPECIFIED") == 0) { *out = AGC_NIST_SECURITY_LEVEL_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "NIST_SECURITY_LEVEL_1") == 0) { *out = AGC_NIST_SECURITY_LEVEL_1; return AGC_OK; }
-    if (strcmp(name, "NIST_SECURITY_LEVEL_2") == 0) { *out = AGC_NIST_SECURITY_LEVEL_2; return AGC_OK; }
-    if (strcmp(name, "NIST_SECURITY_LEVEL_3") == 0) { *out = AGC_NIST_SECURITY_LEVEL_3; return AGC_OK; }
-    if (strcmp(name, "NIST_SECURITY_LEVEL_4") == 0) { *out = AGC_NIST_SECURITY_LEVEL_4; return AGC_OK; }
-    if (strcmp(name, "NIST_SECURITY_LEVEL_5") == 0) { *out = AGC_NIST_SECURITY_LEVEL_5; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_nist_status_name(agc_nist_status v)
-{
-    switch (v) {
-    case AGC_NIST_STATUS_UNSPECIFIED: return "NIST_STATUS_UNSPECIFIED";
-    case AGC_NIST_STATUS_APPROVED: return "NIST_STATUS_APPROVED";
-    case AGC_NIST_STATUS_RECOMMENDED: return "NIST_STATUS_RECOMMENDED";
-    case AGC_NIST_STATUS_ACCEPTABLE: return "NIST_STATUS_ACCEPTABLE";
-    case AGC_NIST_STATUS_DEPRECATED: return "NIST_STATUS_DEPRECATED";
-    case AGC_NIST_STATUS_FORBIDDEN: return "NIST_STATUS_FORBIDDEN";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_nist_status_from_name(const char *name, agc_nist_status *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "NIST_STATUS_UNSPECIFIED") == 0) { *out = AGC_NIST_STATUS_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "NIST_STATUS_APPROVED") == 0) { *out = AGC_NIST_STATUS_APPROVED; return AGC_OK; }
-    if (strcmp(name, "NIST_STATUS_RECOMMENDED") == 0) { *out = AGC_NIST_STATUS_RECOMMENDED; return AGC_OK; }
-    if (strcmp(name, "NIST_STATUS_ACCEPTABLE") == 0) { *out = AGC_NIST_STATUS_ACCEPTABLE; return AGC_OK; }
-    if (strcmp(name, "NIST_STATUS_DEPRECATED") == 0) { *out = AGC_NIST_STATUS_DEPRECATED; return AGC_OK; }
-    if (strcmp(name, "NIST_STATUS_FORBIDDEN") == 0) { *out = AGC_NIST_STATUS_FORBIDDEN; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_wrap_format_name(agc_wrap_format v)
-{
-    switch (v) {
-    case AGC_WRAP_FORMAT_UNSPECIFIED: return "WRAP_FORMAT_UNSPECIFIED";
-    case AGC_WRAP_FORMAT_PKCS8: return "WRAP_FORMAT_PKCS8";
-    case AGC_WRAP_FORMAT_PKCS1: return "WRAP_FORMAT_PKCS1";
-    case AGC_WRAP_FORMAT_RAW: return "WRAP_FORMAT_RAW";
-    case AGC_WRAP_FORMAT_SPKI: return "WRAP_FORMAT_SPKI";
-    case AGC_WRAP_FORMAT_SEC1: return "WRAP_FORMAT_SEC1";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_wrap_format_from_name(const char *name, agc_wrap_format *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "WRAP_FORMAT_UNSPECIFIED") == 0) { *out = AGC_WRAP_FORMAT_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "WRAP_FORMAT_PKCS8") == 0) { *out = AGC_WRAP_FORMAT_PKCS8; return AGC_OK; }
-    if (strcmp(name, "WRAP_FORMAT_PKCS1") == 0) { *out = AGC_WRAP_FORMAT_PKCS1; return AGC_OK; }
-    if (strcmp(name, "WRAP_FORMAT_RAW") == 0) { *out = AGC_WRAP_FORMAT_RAW; return AGC_OK; }
-    if (strcmp(name, "WRAP_FORMAT_SPKI") == 0) { *out = AGC_WRAP_FORMAT_SPKI; return AGC_OK; }
-    if (strcmp(name, "WRAP_FORMAT_SEC1") == 0) { *out = AGC_WRAP_FORMAT_SEC1; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_key_format_name(agc_key_format v)
-{
-    switch (v) {
-    case AGC_KEY_FORMAT_UNSPECIFIED: return "KEY_FORMAT_UNSPECIFIED";
-    case AGC_KEY_FORMAT_RAW: return "KEY_FORMAT_RAW";
-    case AGC_KEY_FORMAT_WRAPPED: return "KEY_FORMAT_WRAPPED";
-    case AGC_KEY_FORMAT_PKCS8: return "KEY_FORMAT_PKCS8";
-    case AGC_KEY_FORMAT_SPKI: return "KEY_FORMAT_SPKI";
-    case AGC_KEY_FORMAT_JWK: return "KEY_FORMAT_JWK";
-    case AGC_KEY_FORMAT_PEM: return "KEY_FORMAT_PEM";
-    case AGC_KEY_FORMAT_SEC1: return "KEY_FORMAT_SEC1";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_key_format_from_name(const char *name, agc_key_format *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "KEY_FORMAT_UNSPECIFIED") == 0) { *out = AGC_KEY_FORMAT_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_RAW") == 0) { *out = AGC_KEY_FORMAT_RAW; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_WRAPPED") == 0) { *out = AGC_KEY_FORMAT_WRAPPED; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_PKCS8") == 0) { *out = AGC_KEY_FORMAT_PKCS8; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_SPKI") == 0) { *out = AGC_KEY_FORMAT_SPKI; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_JWK") == 0) { *out = AGC_KEY_FORMAT_JWK; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_PEM") == 0) { *out = AGC_KEY_FORMAT_PEM; return AGC_OK; }
-    if (strcmp(name, "KEY_FORMAT_SEC1") == 0) { *out = AGC_KEY_FORMAT_SEC1; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
-const char *agc_crypto_operation_name(agc_crypto_operation v)
-{
-    switch (v) {
-    case AGC_CRYPTO_OPERATION_UNSPECIFIED: return "CRYPTO_OPERATION_UNSPECIFIED";
-    case AGC_CRYPTO_OPERATION_CREATE_KEY: return "CRYPTO_OPERATION_CREATE_KEY";
-    case AGC_CRYPTO_OPERATION_READ_KEY: return "CRYPTO_OPERATION_READ_KEY";
-    case AGC_CRYPTO_OPERATION_DELETE_KEY: return "CRYPTO_OPERATION_DELETE_KEY";
-    case AGC_CRYPTO_OPERATION_ROTATE_KEY: return "CRYPTO_OPERATION_ROTATE_KEY";
-    case AGC_CRYPTO_OPERATION_TRANSFORM_KEY: return "CRYPTO_OPERATION_TRANSFORM_KEY";
-    case AGC_CRYPTO_OPERATION_IMPORT_KEY: return "CRYPTO_OPERATION_IMPORT_KEY";
-    case AGC_CRYPTO_OPERATION_EXPORT_KEY: return "CRYPTO_OPERATION_EXPORT_KEY";
-    case AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY: return "CRYPTO_OPERATION_UPDATE_KEY_POLICY";
-    case AGC_CRYPTO_OPERATION_MIGRATE_KEY: return "CRYPTO_OPERATION_MIGRATE_KEY";
-    case AGC_CRYPTO_OPERATION_ENCRYPT: return "CRYPTO_OPERATION_ENCRYPT";
-    case AGC_CRYPTO_OPERATION_DECRYPT: return "CRYPTO_OPERATION_DECRYPT";
-    case AGC_CRYPTO_OPERATION_SIGN: return "CRYPTO_OPERATION_SIGN";
-    case AGC_CRYPTO_OPERATION_VERIFY: return "CRYPTO_OPERATION_VERIFY";
-    case AGC_CRYPTO_OPERATION_DIGEST_SIGN: return "CRYPTO_OPERATION_DIGEST_SIGN";
-    case AGC_CRYPTO_OPERATION_DIGEST_VERIFY: return "CRYPTO_OPERATION_DIGEST_VERIFY";
-    case AGC_CRYPTO_OPERATION_WRAP_KEY: return "CRYPTO_OPERATION_WRAP_KEY";
-    case AGC_CRYPTO_OPERATION_UNWRAP_KEY: return "CRYPTO_OPERATION_UNWRAP_KEY";
-    case AGC_CRYPTO_OPERATION_DERIVE_KEY: return "CRYPTO_OPERATION_DERIVE_KEY";
-    case AGC_CRYPTO_OPERATION_GENERATE_MAC: return "CRYPTO_OPERATION_GENERATE_MAC";
-    case AGC_CRYPTO_OPERATION_VERIFY_MAC: return "CRYPTO_OPERATION_VERIFY_MAC";
-    case AGC_CRYPTO_OPERATION_DIGEST: return "CRYPTO_OPERATION_DIGEST";
-    case AGC_CRYPTO_OPERATION_ENCAPSULATE: return "CRYPTO_OPERATION_ENCAPSULATE";
-    case AGC_CRYPTO_OPERATION_DECAPSULATE: return "CRYPTO_OPERATION_DECAPSULATE";
-    case AGC_CRYPTO_OPERATION_KEY_AGREEMENT: return "CRYPTO_OPERATION_KEY_AGREEMENT";
-    case AGC_CRYPTO_OPERATION_GENERATE_RANDOM: return "CRYPTO_OPERATION_GENERATE_RANDOM";
-    case AGC_CRYPTO_OPERATION_SEED_RANDOM: return "CRYPTO_OPERATION_SEED_RANDOM";
-    case AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT: return "CRYPTO_OPERATION_DIGEST_ENCRYPT";
-    case AGC_CRYPTO_OPERATION_DECRYPT_DIGEST: return "CRYPTO_OPERATION_DECRYPT_DIGEST";
-    case AGC_CRYPTO_OPERATION_SIGN_ENCRYPT: return "CRYPTO_OPERATION_SIGN_ENCRYPT";
-    case AGC_CRYPTO_OPERATION_DECRYPT_VERIFY: return "CRYPTO_OPERATION_DECRYPT_VERIFY";
-    default: return "(unknown)";
-    }
-}
-
-agc_rc agc_crypto_operation_from_name(const char *name, agc_crypto_operation *out)
-{
-    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
-    if (strcmp(name, "CRYPTO_OPERATION_UNSPECIFIED") == 0) { *out = AGC_CRYPTO_OPERATION_UNSPECIFIED; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_CREATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_CREATE_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_READ_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_READ_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DELETE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_DELETE_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_ROTATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_ROTATE_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_TRANSFORM_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_TRANSFORM_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_IMPORT_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_IMPORT_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_EXPORT_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_EXPORT_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_UPDATE_KEY_POLICY") == 0) { *out = AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_MIGRATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_MIGRATE_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_ENCRYPT; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_SIGN") == 0) { *out = AGC_CRYPTO_OPERATION_SIGN; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_VERIFY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_SIGN") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_SIGN; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_VERIFY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_WRAP_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_WRAP_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_UNWRAP_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_UNWRAP_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DERIVE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_DERIVE_KEY; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_GENERATE_MAC") == 0) { *out = AGC_CRYPTO_OPERATION_GENERATE_MAC; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_VERIFY_MAC") == 0) { *out = AGC_CRYPTO_OPERATION_VERIFY_MAC; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DIGEST") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_ENCAPSULATE") == 0) { *out = AGC_CRYPTO_OPERATION_ENCAPSULATE; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DECAPSULATE") == 0) { *out = AGC_CRYPTO_OPERATION_DECAPSULATE; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_KEY_AGREEMENT") == 0) { *out = AGC_CRYPTO_OPERATION_KEY_AGREEMENT; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_GENERATE_RANDOM") == 0) { *out = AGC_CRYPTO_OPERATION_GENERATE_RANDOM; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_SEED_RANDOM") == 0) { *out = AGC_CRYPTO_OPERATION_SEED_RANDOM; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT_DIGEST") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT_DIGEST; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_SIGN_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_SIGN_ENCRYPT; return AGC_OK; }
-    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT_VERIFY; return AGC_OK; }
-    return AGC_ERR_INVALID_ARGUMENT;
-}
-
 const char *agc_hash_algorithm_name(agc_hash_algorithm v)
 {
     switch (v) {
@@ -913,6 +465,479 @@ agc_rc agc_ecdh_kdf_type_from_name(const char *name, agc_ecdh_kdf_type *out)
     return AGC_ERR_INVALID_ARGUMENT;
 }
 
+const char *agc_signature_scope_name(agc_signature_scope v)
+{
+    switch (v) {
+    case AGC_SIGNATURE_SCOPE_UNSPECIFIED: return "SIGNATURE_SCOPE_UNSPECIFIED";
+    case AGC_SIGNATURE_SCOPE_STANDARD: return "SIGNATURE_SCOPE_STANDARD";
+    case AGC_SIGNATURE_SCOPE_WITH_CONTEXT: return "SIGNATURE_SCOPE_WITH_CONTEXT";
+    case AGC_SIGNATURE_SCOPE_PREHASHED: return "SIGNATURE_SCOPE_PREHASHED";
+    case AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT: return "SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_signature_scope_from_name(const char *name, agc_signature_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "SIGNATURE_SCOPE_UNSPECIFIED") == 0) { *out = AGC_SIGNATURE_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "SIGNATURE_SCOPE_STANDARD") == 0) { *out = AGC_SIGNATURE_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "SIGNATURE_SCOPE_WITH_CONTEXT") == 0) { *out = AGC_SIGNATURE_SCOPE_WITH_CONTEXT; return AGC_OK; }
+    if (strcmp(name, "SIGNATURE_SCOPE_PREHASHED") == 0) { *out = AGC_SIGNATURE_SCOPE_PREHASHED; return AGC_OK; }
+    if (strcmp(name, "SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT") == 0) { *out = AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_aead_scope_name(agc_aead_scope v)
+{
+    switch (v) {
+    case AGC_AEAD_SCOPE_UNSPECIFIED: return "AEAD_SCOPE_UNSPECIFIED";
+    case AGC_AEAD_SCOPE_STANDARD: return "AEAD_SCOPE_STANDARD";
+    case AGC_AEAD_SCOPE_DETERMINISTIC: return "AEAD_SCOPE_DETERMINISTIC";
+    case AGC_AEAD_SCOPE_STREAMING: return "AEAD_SCOPE_STREAMING";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_aead_scope_from_name(const char *name, agc_aead_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "AEAD_SCOPE_UNSPECIFIED") == 0) { *out = AGC_AEAD_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "AEAD_SCOPE_STANDARD") == 0) { *out = AGC_AEAD_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "AEAD_SCOPE_DETERMINISTIC") == 0) { *out = AGC_AEAD_SCOPE_DETERMINISTIC; return AGC_OK; }
+    if (strcmp(name, "AEAD_SCOPE_STREAMING") == 0) { *out = AGC_AEAD_SCOPE_STREAMING; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_mac_scope_name(agc_mac_scope v)
+{
+    switch (v) {
+    case AGC_MAC_SCOPE_UNSPECIFIED: return "MAC_SCOPE_UNSPECIFIED";
+    case AGC_MAC_SCOPE_STANDARD: return "MAC_SCOPE_STANDARD";
+    case AGC_MAC_SCOPE_STREAMING: return "MAC_SCOPE_STREAMING";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_mac_scope_from_name(const char *name, agc_mac_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "MAC_SCOPE_UNSPECIFIED") == 0) { *out = AGC_MAC_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "MAC_SCOPE_STANDARD") == 0) { *out = AGC_MAC_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "MAC_SCOPE_STREAMING") == 0) { *out = AGC_MAC_SCOPE_STREAMING; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_kem_scope_name(agc_kem_scope v)
+{
+    switch (v) {
+    case AGC_KEM_SCOPE_UNSPECIFIED: return "KEM_SCOPE_UNSPECIFIED";
+    case AGC_KEM_SCOPE_STANDARD: return "KEM_SCOPE_STANDARD";
+    case AGC_KEM_SCOPE_HYBRID: return "KEM_SCOPE_HYBRID";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_kem_scope_from_name(const char *name, agc_kem_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEM_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEM_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEM_SCOPE_STANDARD") == 0) { *out = AGC_KEM_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "KEM_SCOPE_HYBRID") == 0) { *out = AGC_KEM_SCOPE_HYBRID; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_key_agreement_scope_name(agc_key_agreement_scope v)
+{
+    switch (v) {
+    case AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED: return "KEY_AGREEMENT_SCOPE_UNSPECIFIED";
+    case AGC_KEY_AGREEMENT_SCOPE_STANDARD: return "KEY_AGREEMENT_SCOPE_STANDARD";
+    case AGC_KEY_AGREEMENT_SCOPE_HYBRID: return "KEY_AGREEMENT_SCOPE_HYBRID";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_key_agreement_scope_from_name(const char *name, agc_key_agreement_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEY_AGREEMENT_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEY_AGREEMENT_SCOPE_STANDARD") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "KEY_AGREEMENT_SCOPE_HYBRID") == 0) { *out = AGC_KEY_AGREEMENT_SCOPE_HYBRID; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_kdf_scope_name(agc_kdf_scope v)
+{
+    switch (v) {
+    case AGC_KDF_SCOPE_UNSPECIFIED: return "KDF_SCOPE_UNSPECIFIED";
+    case AGC_KDF_SCOPE_EXTRACT_EXPAND: return "KDF_SCOPE_EXTRACT_EXPAND";
+    case AGC_KDF_SCOPE_PASSWORD: return "KDF_SCOPE_PASSWORD";
+    case AGC_KDF_SCOPE_AGREEMENT: return "KDF_SCOPE_AGREEMENT";
+    case AGC_KDF_SCOPE_COUNTER: return "KDF_SCOPE_COUNTER";
+    case AGC_KDF_SCOPE_TLS: return "KDF_SCOPE_TLS";
+    case AGC_KDF_SCOPE_GOST: return "KDF_SCOPE_GOST";
+    case AGC_KDF_SCOPE_VENDOR: return "KDF_SCOPE_VENDOR";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_kdf_scope_from_name(const char *name, agc_kdf_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KDF_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KDF_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_EXTRACT_EXPAND") == 0) { *out = AGC_KDF_SCOPE_EXTRACT_EXPAND; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_PASSWORD") == 0) { *out = AGC_KDF_SCOPE_PASSWORD; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_AGREEMENT") == 0) { *out = AGC_KDF_SCOPE_AGREEMENT; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_COUNTER") == 0) { *out = AGC_KDF_SCOPE_COUNTER; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_TLS") == 0) { *out = AGC_KDF_SCOPE_TLS; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_GOST") == 0) { *out = AGC_KDF_SCOPE_GOST; return AGC_OK; }
+    if (strcmp(name, "KDF_SCOPE_VENDOR") == 0) { *out = AGC_KDF_SCOPE_VENDOR; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_hash_scope_name(agc_hash_scope v)
+{
+    switch (v) {
+    case AGC_HASH_SCOPE_UNSPECIFIED: return "HASH_SCOPE_UNSPECIFIED";
+    case AGC_HASH_SCOPE_STANDARD: return "HASH_SCOPE_STANDARD";
+    case AGC_HASH_SCOPE_XOF: return "HASH_SCOPE_XOF";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_hash_scope_from_name(const char *name, agc_hash_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "HASH_SCOPE_UNSPECIFIED") == 0) { *out = AGC_HASH_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "HASH_SCOPE_STANDARD") == 0) { *out = AGC_HASH_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "HASH_SCOPE_XOF") == 0) { *out = AGC_HASH_SCOPE_XOF; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_key_wrapping_scope_name(agc_key_wrapping_scope v)
+{
+    switch (v) {
+    case AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED: return "KEY_WRAPPING_SCOPE_UNSPECIFIED";
+    case AGC_KEY_WRAPPING_SCOPE_STANDARD: return "KEY_WRAPPING_SCOPE_STANDARD";
+    case AGC_KEY_WRAPPING_SCOPE_WITH_PADDING: return "KEY_WRAPPING_SCOPE_WITH_PADDING";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_key_wrapping_scope_from_name(const char *name, agc_key_wrapping_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEY_WRAPPING_SCOPE_UNSPECIFIED") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEY_WRAPPING_SCOPE_STANDARD") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "KEY_WRAPPING_SCOPE_WITH_PADDING") == 0) { *out = AGC_KEY_WRAPPING_SCOPE_WITH_PADDING; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_symmetric_cipher_scope_name(agc_symmetric_cipher_scope v)
+{
+    switch (v) {
+    case AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED: return "SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED";
+    case AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK: return "SYMMETRIC_CIPHER_SCOPE_BLOCK";
+    case AGC_SYMMETRIC_CIPHER_SCOPE_STREAM: return "SYMMETRIC_CIPHER_SCOPE_STREAM";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_symmetric_cipher_scope_from_name(const char *name, agc_symmetric_cipher_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_BLOCK") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK; return AGC_OK; }
+    if (strcmp(name, "SYMMETRIC_CIPHER_SCOPE_STREAM") == 0) { *out = AGC_SYMMETRIC_CIPHER_SCOPE_STREAM; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_disk_encryption_scope_name(agc_disk_encryption_scope v)
+{
+    switch (v) {
+    case AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED: return "DISK_ENCRYPTION_SCOPE_UNSPECIFIED";
+    case AGC_DISK_ENCRYPTION_SCOPE_STANDARD: return "DISK_ENCRYPTION_SCOPE_STANDARD";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_disk_encryption_scope_from_name(const char *name, agc_disk_encryption_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "DISK_ENCRYPTION_SCOPE_UNSPECIFIED") == 0) { *out = AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "DISK_ENCRYPTION_SCOPE_STANDARD") == 0) { *out = AGC_DISK_ENCRYPTION_SCOPE_STANDARD; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_generic_secret_scope_name(agc_generic_secret_scope v)
+{
+    switch (v) {
+    case AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED: return "GENERIC_SECRET_SCOPE_UNSPECIFIED";
+    case AGC_GENERIC_SECRET_SCOPE_STANDARD: return "GENERIC_SECRET_SCOPE_STANDARD";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_generic_secret_scope_from_name(const char *name, agc_generic_secret_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "GENERIC_SECRET_SCOPE_UNSPECIFIED") == 0) { *out = AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "GENERIC_SECRET_SCOPE_STANDARD") == 0) { *out = AGC_GENERIC_SECRET_SCOPE_STANDARD; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_asymmetric_encryption_scope_name(agc_asymmetric_encryption_scope v)
+{
+    switch (v) {
+    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED: return "ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED";
+    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD: return "ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD";
+    case AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW: return "ASYMMETRIC_ENCRYPTION_SCOPE_RAW";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_asymmetric_encryption_scope_from_name(const char *name, agc_asymmetric_encryption_scope *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD; return AGC_OK; }
+    if (strcmp(name, "ASYMMETRIC_ENCRYPTION_SCOPE_RAW") == 0) { *out = AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_key_lifecycle_state_name(agc_key_lifecycle_state v)
+{
+    switch (v) {
+    case AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED: return "KEY_LIFECYCLE_STATE_UNSPECIFIED";
+    case AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE: return "KEY_LIFECYCLE_STATE_PRE_ACTIVE";
+    case AGC_KEY_LIFECYCLE_STATE_ACTIVE: return "KEY_LIFECYCLE_STATE_ACTIVE";
+    case AGC_KEY_LIFECYCLE_STATE_SUSPENDED: return "KEY_LIFECYCLE_STATE_SUSPENDED";
+    case AGC_KEY_LIFECYCLE_STATE_DEACTIVATED: return "KEY_LIFECYCLE_STATE_DEACTIVATED";
+    case AGC_KEY_LIFECYCLE_STATE_COMPROMISED: return "KEY_LIFECYCLE_STATE_COMPROMISED";
+    case AGC_KEY_LIFECYCLE_STATE_DESTROYED: return "KEY_LIFECYCLE_STATE_DESTROYED";
+    case AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED: return "KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_key_lifecycle_state_from_name(const char *name, agc_key_lifecycle_state *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_UNSPECIFIED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_PRE_ACTIVE") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_ACTIVE") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_ACTIVE; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_SUSPENDED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_SUSPENDED; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_DEACTIVATED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DEACTIVATED; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_COMPROMISED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_COMPROMISED; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_DESTROYED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DESTROYED; return AGC_OK; }
+    if (strcmp(name, "KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED") == 0) { *out = AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_key_origin_name(agc_key_origin v)
+{
+    switch (v) {
+    case AGC_KEY_ORIGIN_UNSPECIFIED: return "KEY_ORIGIN_UNSPECIFIED";
+    case AGC_KEY_ORIGIN_GENERATED: return "KEY_ORIGIN_GENERATED";
+    case AGC_KEY_ORIGIN_IMPORTED: return "KEY_ORIGIN_IMPORTED";
+    case AGC_KEY_ORIGIN_DERIVED: return "KEY_ORIGIN_DERIVED";
+    case AGC_KEY_ORIGIN_UNWRAPPED: return "KEY_ORIGIN_UNWRAPPED";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_key_origin_from_name(const char *name, agc_key_origin *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEY_ORIGIN_UNSPECIFIED") == 0) { *out = AGC_KEY_ORIGIN_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEY_ORIGIN_GENERATED") == 0) { *out = AGC_KEY_ORIGIN_GENERATED; return AGC_OK; }
+    if (strcmp(name, "KEY_ORIGIN_IMPORTED") == 0) { *out = AGC_KEY_ORIGIN_IMPORTED; return AGC_OK; }
+    if (strcmp(name, "KEY_ORIGIN_DERIVED") == 0) { *out = AGC_KEY_ORIGIN_DERIVED; return AGC_OK; }
+    if (strcmp(name, "KEY_ORIGIN_UNWRAPPED") == 0) { *out = AGC_KEY_ORIGIN_UNWRAPPED; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_nist_security_level_name(agc_nist_security_level v)
+{
+    switch (v) {
+    case AGC_NIST_SECURITY_LEVEL_UNSPECIFIED: return "NIST_SECURITY_LEVEL_UNSPECIFIED";
+    case AGC_NIST_SECURITY_LEVEL_1: return "NIST_SECURITY_LEVEL_1";
+    case AGC_NIST_SECURITY_LEVEL_2: return "NIST_SECURITY_LEVEL_2";
+    case AGC_NIST_SECURITY_LEVEL_3: return "NIST_SECURITY_LEVEL_3";
+    case AGC_NIST_SECURITY_LEVEL_4: return "NIST_SECURITY_LEVEL_4";
+    case AGC_NIST_SECURITY_LEVEL_5: return "NIST_SECURITY_LEVEL_5";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_nist_security_level_from_name(const char *name, agc_nist_security_level *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "NIST_SECURITY_LEVEL_UNSPECIFIED") == 0) { *out = AGC_NIST_SECURITY_LEVEL_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "NIST_SECURITY_LEVEL_1") == 0) { *out = AGC_NIST_SECURITY_LEVEL_1; return AGC_OK; }
+    if (strcmp(name, "NIST_SECURITY_LEVEL_2") == 0) { *out = AGC_NIST_SECURITY_LEVEL_2; return AGC_OK; }
+    if (strcmp(name, "NIST_SECURITY_LEVEL_3") == 0) { *out = AGC_NIST_SECURITY_LEVEL_3; return AGC_OK; }
+    if (strcmp(name, "NIST_SECURITY_LEVEL_4") == 0) { *out = AGC_NIST_SECURITY_LEVEL_4; return AGC_OK; }
+    if (strcmp(name, "NIST_SECURITY_LEVEL_5") == 0) { *out = AGC_NIST_SECURITY_LEVEL_5; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_nist_status_name(agc_nist_status v)
+{
+    switch (v) {
+    case AGC_NIST_STATUS_UNSPECIFIED: return "NIST_STATUS_UNSPECIFIED";
+    case AGC_NIST_STATUS_APPROVED: return "NIST_STATUS_APPROVED";
+    case AGC_NIST_STATUS_RECOMMENDED: return "NIST_STATUS_RECOMMENDED";
+    case AGC_NIST_STATUS_ACCEPTABLE: return "NIST_STATUS_ACCEPTABLE";
+    case AGC_NIST_STATUS_DEPRECATED: return "NIST_STATUS_DEPRECATED";
+    case AGC_NIST_STATUS_FORBIDDEN: return "NIST_STATUS_FORBIDDEN";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_nist_status_from_name(const char *name, agc_nist_status *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "NIST_STATUS_UNSPECIFIED") == 0) { *out = AGC_NIST_STATUS_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "NIST_STATUS_APPROVED") == 0) { *out = AGC_NIST_STATUS_APPROVED; return AGC_OK; }
+    if (strcmp(name, "NIST_STATUS_RECOMMENDED") == 0) { *out = AGC_NIST_STATUS_RECOMMENDED; return AGC_OK; }
+    if (strcmp(name, "NIST_STATUS_ACCEPTABLE") == 0) { *out = AGC_NIST_STATUS_ACCEPTABLE; return AGC_OK; }
+    if (strcmp(name, "NIST_STATUS_DEPRECATED") == 0) { *out = AGC_NIST_STATUS_DEPRECATED; return AGC_OK; }
+    if (strcmp(name, "NIST_STATUS_FORBIDDEN") == 0) { *out = AGC_NIST_STATUS_FORBIDDEN; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_wrap_format_name(agc_wrap_format v)
+{
+    switch (v) {
+    case AGC_WRAP_FORMAT_UNSPECIFIED: return "WRAP_FORMAT_UNSPECIFIED";
+    case AGC_WRAP_FORMAT_PKCS8: return "WRAP_FORMAT_PKCS8";
+    case AGC_WRAP_FORMAT_PKCS1: return "WRAP_FORMAT_PKCS1";
+    case AGC_WRAP_FORMAT_RAW: return "WRAP_FORMAT_RAW";
+    case AGC_WRAP_FORMAT_SPKI: return "WRAP_FORMAT_SPKI";
+    case AGC_WRAP_FORMAT_SEC1: return "WRAP_FORMAT_SEC1";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_wrap_format_from_name(const char *name, agc_wrap_format *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "WRAP_FORMAT_UNSPECIFIED") == 0) { *out = AGC_WRAP_FORMAT_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "WRAP_FORMAT_PKCS8") == 0) { *out = AGC_WRAP_FORMAT_PKCS8; return AGC_OK; }
+    if (strcmp(name, "WRAP_FORMAT_PKCS1") == 0) { *out = AGC_WRAP_FORMAT_PKCS1; return AGC_OK; }
+    if (strcmp(name, "WRAP_FORMAT_RAW") == 0) { *out = AGC_WRAP_FORMAT_RAW; return AGC_OK; }
+    if (strcmp(name, "WRAP_FORMAT_SPKI") == 0) { *out = AGC_WRAP_FORMAT_SPKI; return AGC_OK; }
+    if (strcmp(name, "WRAP_FORMAT_SEC1") == 0) { *out = AGC_WRAP_FORMAT_SEC1; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_key_format_name(agc_key_format v)
+{
+    switch (v) {
+    case AGC_KEY_FORMAT_UNSPECIFIED: return "KEY_FORMAT_UNSPECIFIED";
+    case AGC_KEY_FORMAT_RAW: return "KEY_FORMAT_RAW";
+    case AGC_KEY_FORMAT_WRAPPED: return "KEY_FORMAT_WRAPPED";
+    case AGC_KEY_FORMAT_PKCS8: return "KEY_FORMAT_PKCS8";
+    case AGC_KEY_FORMAT_SPKI: return "KEY_FORMAT_SPKI";
+    case AGC_KEY_FORMAT_JWK: return "KEY_FORMAT_JWK";
+    case AGC_KEY_FORMAT_PEM: return "KEY_FORMAT_PEM";
+    case AGC_KEY_FORMAT_SEC1: return "KEY_FORMAT_SEC1";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_key_format_from_name(const char *name, agc_key_format *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "KEY_FORMAT_UNSPECIFIED") == 0) { *out = AGC_KEY_FORMAT_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_RAW") == 0) { *out = AGC_KEY_FORMAT_RAW; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_WRAPPED") == 0) { *out = AGC_KEY_FORMAT_WRAPPED; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_PKCS8") == 0) { *out = AGC_KEY_FORMAT_PKCS8; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_SPKI") == 0) { *out = AGC_KEY_FORMAT_SPKI; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_JWK") == 0) { *out = AGC_KEY_FORMAT_JWK; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_PEM") == 0) { *out = AGC_KEY_FORMAT_PEM; return AGC_OK; }
+    if (strcmp(name, "KEY_FORMAT_SEC1") == 0) { *out = AGC_KEY_FORMAT_SEC1; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
+const char *agc_crypto_operation_name(agc_crypto_operation v)
+{
+    switch (v) {
+    case AGC_CRYPTO_OPERATION_UNSPECIFIED: return "CRYPTO_OPERATION_UNSPECIFIED";
+    case AGC_CRYPTO_OPERATION_CREATE_KEY: return "CRYPTO_OPERATION_CREATE_KEY";
+    case AGC_CRYPTO_OPERATION_READ_KEY: return "CRYPTO_OPERATION_READ_KEY";
+    case AGC_CRYPTO_OPERATION_DELETE_KEY: return "CRYPTO_OPERATION_DELETE_KEY";
+    case AGC_CRYPTO_OPERATION_ROTATE_KEY: return "CRYPTO_OPERATION_ROTATE_KEY";
+    case AGC_CRYPTO_OPERATION_TRANSFORM_KEY: return "CRYPTO_OPERATION_TRANSFORM_KEY";
+    case AGC_CRYPTO_OPERATION_IMPORT_KEY: return "CRYPTO_OPERATION_IMPORT_KEY";
+    case AGC_CRYPTO_OPERATION_EXPORT_KEY: return "CRYPTO_OPERATION_EXPORT_KEY";
+    case AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY: return "CRYPTO_OPERATION_UPDATE_KEY_POLICY";
+    case AGC_CRYPTO_OPERATION_MIGRATE_KEY: return "CRYPTO_OPERATION_MIGRATE_KEY";
+    case AGC_CRYPTO_OPERATION_UPDATE_KEY_STATE: return "CRYPTO_OPERATION_UPDATE_KEY_STATE";
+    case AGC_CRYPTO_OPERATION_ENCRYPT: return "CRYPTO_OPERATION_ENCRYPT";
+    case AGC_CRYPTO_OPERATION_DECRYPT: return "CRYPTO_OPERATION_DECRYPT";
+    case AGC_CRYPTO_OPERATION_SIGN: return "CRYPTO_OPERATION_SIGN";
+    case AGC_CRYPTO_OPERATION_VERIFY: return "CRYPTO_OPERATION_VERIFY";
+    case AGC_CRYPTO_OPERATION_DIGEST_SIGN: return "CRYPTO_OPERATION_DIGEST_SIGN";
+    case AGC_CRYPTO_OPERATION_DIGEST_VERIFY: return "CRYPTO_OPERATION_DIGEST_VERIFY";
+    case AGC_CRYPTO_OPERATION_WRAP_KEY: return "CRYPTO_OPERATION_WRAP_KEY";
+    case AGC_CRYPTO_OPERATION_UNWRAP_KEY: return "CRYPTO_OPERATION_UNWRAP_KEY";
+    case AGC_CRYPTO_OPERATION_DERIVE_KEY: return "CRYPTO_OPERATION_DERIVE_KEY";
+    case AGC_CRYPTO_OPERATION_GENERATE_MAC: return "CRYPTO_OPERATION_GENERATE_MAC";
+    case AGC_CRYPTO_OPERATION_VERIFY_MAC: return "CRYPTO_OPERATION_VERIFY_MAC";
+    case AGC_CRYPTO_OPERATION_DIGEST: return "CRYPTO_OPERATION_DIGEST";
+    case AGC_CRYPTO_OPERATION_ENCAPSULATE: return "CRYPTO_OPERATION_ENCAPSULATE";
+    case AGC_CRYPTO_OPERATION_DECAPSULATE: return "CRYPTO_OPERATION_DECAPSULATE";
+    case AGC_CRYPTO_OPERATION_KEY_AGREEMENT: return "CRYPTO_OPERATION_KEY_AGREEMENT";
+    case AGC_CRYPTO_OPERATION_GENERATE_RANDOM: return "CRYPTO_OPERATION_GENERATE_RANDOM";
+    case AGC_CRYPTO_OPERATION_SEED_RANDOM: return "CRYPTO_OPERATION_SEED_RANDOM";
+    case AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT: return "CRYPTO_OPERATION_DIGEST_ENCRYPT";
+    case AGC_CRYPTO_OPERATION_DECRYPT_DIGEST: return "CRYPTO_OPERATION_DECRYPT_DIGEST";
+    case AGC_CRYPTO_OPERATION_SIGN_ENCRYPT: return "CRYPTO_OPERATION_SIGN_ENCRYPT";
+    case AGC_CRYPTO_OPERATION_DECRYPT_VERIFY: return "CRYPTO_OPERATION_DECRYPT_VERIFY";
+    default: return "(unknown)";
+    }
+}
+
+agc_rc agc_crypto_operation_from_name(const char *name, agc_crypto_operation *out)
+{
+    if (!name || !out) return AGC_ERR_INVALID_ARGUMENT;
+    if (strcmp(name, "CRYPTO_OPERATION_UNSPECIFIED") == 0) { *out = AGC_CRYPTO_OPERATION_UNSPECIFIED; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_CREATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_CREATE_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_READ_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_READ_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DELETE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_DELETE_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_ROTATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_ROTATE_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_TRANSFORM_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_TRANSFORM_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_IMPORT_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_IMPORT_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_EXPORT_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_EXPORT_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_UPDATE_KEY_POLICY") == 0) { *out = AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_MIGRATE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_MIGRATE_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_UPDATE_KEY_STATE") == 0) { *out = AGC_CRYPTO_OPERATION_UPDATE_KEY_STATE; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_ENCRYPT; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_SIGN") == 0) { *out = AGC_CRYPTO_OPERATION_SIGN; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_VERIFY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_SIGN") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_SIGN; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_VERIFY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_WRAP_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_WRAP_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_UNWRAP_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_UNWRAP_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DERIVE_KEY") == 0) { *out = AGC_CRYPTO_OPERATION_DERIVE_KEY; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_GENERATE_MAC") == 0) { *out = AGC_CRYPTO_OPERATION_GENERATE_MAC; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_VERIFY_MAC") == 0) { *out = AGC_CRYPTO_OPERATION_VERIFY_MAC; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DIGEST") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_ENCAPSULATE") == 0) { *out = AGC_CRYPTO_OPERATION_ENCAPSULATE; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DECAPSULATE") == 0) { *out = AGC_CRYPTO_OPERATION_DECAPSULATE; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_KEY_AGREEMENT") == 0) { *out = AGC_CRYPTO_OPERATION_KEY_AGREEMENT; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_GENERATE_RANDOM") == 0) { *out = AGC_CRYPTO_OPERATION_GENERATE_RANDOM; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_SEED_RANDOM") == 0) { *out = AGC_CRYPTO_OPERATION_SEED_RANDOM; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DIGEST_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT_DIGEST") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT_DIGEST; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_SIGN_ENCRYPT") == 0) { *out = AGC_CRYPTO_OPERATION_SIGN_ENCRYPT; return AGC_OK; }
+    if (strcmp(name, "CRYPTO_OPERATION_DECRYPT_VERIFY") == 0) { *out = AGC_CRYPTO_OPERATION_DECRYPT_VERIFY; return AGC_OK; }
+    return AGC_ERR_INVALID_ARGUMENT;
+}
+
 const char *agc_template_status_name(agc_template_status v)
 {
     switch (v) {
@@ -1134,6 +1159,7 @@ const char *agc_rc_name(agc_rc rc)
     case AGC_ERR_CRYPTO_KEY_VERSION_MISMATCH: return "AGC_ERR_CRYPTO_KEY_VERSION_MISMATCH";
     case AGC_ERR_CRYPTO_KEY_NOT_EXPORTABLE: return "AGC_ERR_CRYPTO_KEY_NOT_EXPORTABLE";
     case AGC_ERR_CRYPTO_KEY_OPERATION_NOT_ALLOWED: return "AGC_ERR_CRYPTO_KEY_OPERATION_NOT_ALLOWED";
+    case AGC_ERR_CRYPTO_INVALID_KEY_STATE_TRANSITION: return "AGC_ERR_CRYPTO_INVALID_KEY_STATE_TRANSITION";
     case AGC_ERR_CRYPTO_TEMPLATE_NOT_FOUND: return "AGC_ERR_CRYPTO_TEMPLATE_NOT_FOUND";
     case AGC_ERR_CRYPTO_TEMPLATE_DEPRECATED: return "AGC_ERR_CRYPTO_TEMPLATE_DEPRECATED";
     case AGC_ERR_CRYPTO_TEMPLATE_FORBIDDEN: return "AGC_ERR_CRYPTO_TEMPLATE_FORBIDDEN";
@@ -1144,6 +1170,7 @@ const char *agc_rc_name(agc_rc rc)
     case AGC_ERR_CRYPTO_NO_MATCHING_PROVIDER: return "AGC_ERR_CRYPTO_NO_MATCHING_PROVIDER";
     case AGC_ERR_CRYPTO_POLICY_NOT_FOUND: return "AGC_ERR_CRYPTO_POLICY_NOT_FOUND";
     case AGC_ERR_CRYPTO_POLICY_VIOLATION: return "AGC_ERR_CRYPTO_POLICY_VIOLATION";
+    case AGC_ERR_CRYPTO_POLICY_VERSION_CONFLICT: return "AGC_ERR_CRYPTO_POLICY_VERSION_CONFLICT";
     case AGC_ERR_CRYPTO_INVALID_OPERATION_STATE: return "AGC_ERR_CRYPTO_INVALID_OPERATION_STATE";
     case AGC_ERR_CRYPTO_OPERATION_EXPIRED: return "AGC_ERR_CRYPTO_OPERATION_EXPIRED";
     case AGC_ERR_CRYPTO_AUTHENTICATION_FAILED: return "AGC_ERR_CRYPTO_AUTHENTICATION_FAILED";

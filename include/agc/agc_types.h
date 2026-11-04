@@ -74,6 +74,7 @@ typedef int32_t agc_rc;
 #define AGC_ERR_CRYPTO_KEY_VERSION_MISMATCH ((agc_rc)-1003)  /* wire value 3 */
 #define AGC_ERR_CRYPTO_KEY_NOT_EXPORTABLE ((agc_rc)-1004)  /* wire value 4 */
 #define AGC_ERR_CRYPTO_KEY_OPERATION_NOT_ALLOWED ((agc_rc)-1005)  /* wire value 5 */
+#define AGC_ERR_CRYPTO_INVALID_KEY_STATE_TRANSITION ((agc_rc)-1006)  /* wire value 6 */
 #define AGC_ERR_CRYPTO_TEMPLATE_NOT_FOUND ((agc_rc)-1010)  /* wire value 10 */
 #define AGC_ERR_CRYPTO_TEMPLATE_DEPRECATED ((agc_rc)-1011)  /* wire value 11 */
 #define AGC_ERR_CRYPTO_TEMPLATE_FORBIDDEN ((agc_rc)-1012)  /* wire value 12 */
@@ -84,6 +85,7 @@ typedef int32_t agc_rc;
 #define AGC_ERR_CRYPTO_NO_MATCHING_PROVIDER ((agc_rc)-1023)  /* wire value 23 */
 #define AGC_ERR_CRYPTO_POLICY_NOT_FOUND ((agc_rc)-1030)  /* wire value 30 */
 #define AGC_ERR_CRYPTO_POLICY_VIOLATION ((agc_rc)-1031)  /* wire value 31 */
+#define AGC_ERR_CRYPTO_POLICY_VERSION_CONFLICT ((agc_rc)-1032)  /* wire value 32 */
 #define AGC_ERR_CRYPTO_INVALID_OPERATION_STATE ((agc_rc)-1040)  /* wire value 40 */
 #define AGC_ERR_CRYPTO_OPERATION_EXPIRED ((agc_rc)-1041)  /* wire value 41 */
 #define AGC_ERR_CRYPTO_AUTHENTICATION_FAILED ((agc_rc)-1042)  /* wire value 42 */
@@ -100,257 +102,6 @@ typedef int32_t agc_rc;
 /* ==========================================================================
  * VOCABULARY ENUMS
  * ========================================================================== */
-
-/* SignatureScope (api/types/common.proto) */
-typedef enum agc_signature_scope {
-    AGC_SIGNATURE_SCOPE_UNSPECIFIED = 0,
-    AGC_SIGNATURE_SCOPE_STANDARD = 1,
-    AGC_SIGNATURE_SCOPE_WITH_CONTEXT = 2,
-    AGC_SIGNATURE_SCOPE_PREHASHED = 3,
-    AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT = 4
-    AGC_ENUM32(agc_signature_scope)
-} agc_signature_scope;
-
-AGC_API const char *agc_signature_scope_name(agc_signature_scope v);
-AGC_API agc_rc agc_signature_scope_from_name(const char *name, agc_signature_scope *out);
-
-/* AeadScope (api/types/common.proto) */
-typedef enum agc_aead_scope {
-    AGC_AEAD_SCOPE_UNSPECIFIED = 0,
-    AGC_AEAD_SCOPE_STANDARD = 1,
-    AGC_AEAD_SCOPE_DETERMINISTIC = 2,
-    AGC_AEAD_SCOPE_STREAMING = 3
-    AGC_ENUM32(agc_aead_scope)
-} agc_aead_scope;
-
-AGC_API const char *agc_aead_scope_name(agc_aead_scope v);
-AGC_API agc_rc agc_aead_scope_from_name(const char *name, agc_aead_scope *out);
-
-/* MacScope (api/types/common.proto) */
-typedef enum agc_mac_scope {
-    AGC_MAC_SCOPE_UNSPECIFIED = 0,
-    AGC_MAC_SCOPE_STANDARD = 1,
-    AGC_MAC_SCOPE_STREAMING = 2
-    AGC_ENUM32(agc_mac_scope)
-} agc_mac_scope;
-
-AGC_API const char *agc_mac_scope_name(agc_mac_scope v);
-AGC_API agc_rc agc_mac_scope_from_name(const char *name, agc_mac_scope *out);
-
-/* KemScope (api/types/common.proto) */
-typedef enum agc_kem_scope {
-    AGC_KEM_SCOPE_UNSPECIFIED = 0,
-    AGC_KEM_SCOPE_STANDARD = 1,
-    AGC_KEM_SCOPE_HYBRID = 2
-    AGC_ENUM32(agc_kem_scope)
-} agc_kem_scope;
-
-AGC_API const char *agc_kem_scope_name(agc_kem_scope v);
-AGC_API agc_rc agc_kem_scope_from_name(const char *name, agc_kem_scope *out);
-
-/* KeyAgreementScope (api/types/common.proto) */
-typedef enum agc_key_agreement_scope {
-    AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED = 0,
-    AGC_KEY_AGREEMENT_SCOPE_STANDARD = 1,
-    AGC_KEY_AGREEMENT_SCOPE_HYBRID = 2
-    AGC_ENUM32(agc_key_agreement_scope)
-} agc_key_agreement_scope;
-
-AGC_API const char *agc_key_agreement_scope_name(agc_key_agreement_scope v);
-AGC_API agc_rc agc_key_agreement_scope_from_name(const char *name, agc_key_agreement_scope *out);
-
-/* KdfScope (api/types/common.proto) */
-typedef enum agc_kdf_scope {
-    AGC_KDF_SCOPE_UNSPECIFIED = 0,
-    AGC_KDF_SCOPE_EXTRACT_EXPAND = 1,
-    AGC_KDF_SCOPE_PASSWORD = 2,
-    AGC_KDF_SCOPE_AGREEMENT = 3,
-    AGC_KDF_SCOPE_COUNTER = 4,
-    AGC_KDF_SCOPE_TLS = 5,
-    AGC_KDF_SCOPE_GOST = 6,
-    AGC_KDF_SCOPE_VENDOR = 7
-    AGC_ENUM32(agc_kdf_scope)
-} agc_kdf_scope;
-
-AGC_API const char *agc_kdf_scope_name(agc_kdf_scope v);
-AGC_API agc_rc agc_kdf_scope_from_name(const char *name, agc_kdf_scope *out);
-
-/* HashScope (api/types/common.proto) */
-typedef enum agc_hash_scope {
-    AGC_HASH_SCOPE_UNSPECIFIED = 0,
-    AGC_HASH_SCOPE_STANDARD = 1,
-    AGC_HASH_SCOPE_XOF = 2
-    AGC_ENUM32(agc_hash_scope)
-} agc_hash_scope;
-
-AGC_API const char *agc_hash_scope_name(agc_hash_scope v);
-AGC_API agc_rc agc_hash_scope_from_name(const char *name, agc_hash_scope *out);
-
-/* KeyWrappingScope (api/types/common.proto) */
-typedef enum agc_key_wrapping_scope {
-    AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED = 0,
-    AGC_KEY_WRAPPING_SCOPE_STANDARD = 1,
-    AGC_KEY_WRAPPING_SCOPE_WITH_PADDING = 2
-    AGC_ENUM32(agc_key_wrapping_scope)
-} agc_key_wrapping_scope;
-
-AGC_API const char *agc_key_wrapping_scope_name(agc_key_wrapping_scope v);
-AGC_API agc_rc agc_key_wrapping_scope_from_name(const char *name, agc_key_wrapping_scope *out);
-
-/* SymmetricCipherScope (api/types/common.proto) */
-typedef enum agc_symmetric_cipher_scope {
-    AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED = 0,
-    AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK = 1,
-    AGC_SYMMETRIC_CIPHER_SCOPE_STREAM = 2
-    AGC_ENUM32(agc_symmetric_cipher_scope)
-} agc_symmetric_cipher_scope;
-
-AGC_API const char *agc_symmetric_cipher_scope_name(agc_symmetric_cipher_scope v);
-AGC_API agc_rc agc_symmetric_cipher_scope_from_name(const char *name, agc_symmetric_cipher_scope *out);
-
-/* DiskEncryptionScope (api/types/common.proto) */
-typedef enum agc_disk_encryption_scope {
-    AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED = 0,
-    AGC_DISK_ENCRYPTION_SCOPE_STANDARD = 1
-    AGC_ENUM32(agc_disk_encryption_scope)
-} agc_disk_encryption_scope;
-
-AGC_API const char *agc_disk_encryption_scope_name(agc_disk_encryption_scope v);
-AGC_API agc_rc agc_disk_encryption_scope_from_name(const char *name, agc_disk_encryption_scope *out);
-
-/* GenericSecretScope (api/types/common.proto) */
-typedef enum agc_generic_secret_scope {
-    AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED = 0,
-    AGC_GENERIC_SECRET_SCOPE_STANDARD = 1
-    AGC_ENUM32(agc_generic_secret_scope)
-} agc_generic_secret_scope;
-
-AGC_API const char *agc_generic_secret_scope_name(agc_generic_secret_scope v);
-AGC_API agc_rc agc_generic_secret_scope_from_name(const char *name, agc_generic_secret_scope *out);
-
-/* AsymmetricEncryptionScope (api/types/common.proto) */
-typedef enum agc_asymmetric_encryption_scope {
-    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED = 0,
-    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD = 1,
-    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW = 2
-    AGC_ENUM32(agc_asymmetric_encryption_scope)
-} agc_asymmetric_encryption_scope;
-
-AGC_API const char *agc_asymmetric_encryption_scope_name(agc_asymmetric_encryption_scope v);
-AGC_API agc_rc agc_asymmetric_encryption_scope_from_name(const char *name, agc_asymmetric_encryption_scope *out);
-
-/* KeyLifecycleState (api/types/common.proto) */
-typedef enum agc_key_lifecycle_state {
-    AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED = 0,
-    AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE = 1,
-    AGC_KEY_LIFECYCLE_STATE_ACTIVE = 2,
-    AGC_KEY_LIFECYCLE_STATE_SUSPENDED = 3,
-    AGC_KEY_LIFECYCLE_STATE_DEACTIVATED = 4,
-    AGC_KEY_LIFECYCLE_STATE_COMPROMISED = 5,
-    AGC_KEY_LIFECYCLE_STATE_DESTROYED = 6,
-    AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED = 7
-    AGC_ENUM32(agc_key_lifecycle_state)
-} agc_key_lifecycle_state;
-
-AGC_API const char *agc_key_lifecycle_state_name(agc_key_lifecycle_state v);
-AGC_API agc_rc agc_key_lifecycle_state_from_name(const char *name, agc_key_lifecycle_state *out);
-
-/* NistSecurityLevel (api/types/common.proto) */
-typedef enum agc_nist_security_level {
-    AGC_NIST_SECURITY_LEVEL_UNSPECIFIED = 0,
-    AGC_NIST_SECURITY_LEVEL_1 = 1,
-    AGC_NIST_SECURITY_LEVEL_2 = 2,
-    AGC_NIST_SECURITY_LEVEL_3 = 3,
-    AGC_NIST_SECURITY_LEVEL_4 = 4,
-    AGC_NIST_SECURITY_LEVEL_5 = 5
-    AGC_ENUM32(agc_nist_security_level)
-} agc_nist_security_level;
-
-AGC_API const char *agc_nist_security_level_name(agc_nist_security_level v);
-AGC_API agc_rc agc_nist_security_level_from_name(const char *name, agc_nist_security_level *out);
-
-/* NistStatus (api/types/common.proto) */
-typedef enum agc_nist_status {
-    AGC_NIST_STATUS_UNSPECIFIED = 0,
-    AGC_NIST_STATUS_APPROVED = 1,
-    AGC_NIST_STATUS_RECOMMENDED = 2,
-    AGC_NIST_STATUS_ACCEPTABLE = 3,
-    AGC_NIST_STATUS_DEPRECATED = 4,
-    AGC_NIST_STATUS_FORBIDDEN = 5
-    AGC_ENUM32(agc_nist_status)
-} agc_nist_status;
-
-AGC_API const char *agc_nist_status_name(agc_nist_status v);
-AGC_API agc_rc agc_nist_status_from_name(const char *name, agc_nist_status *out);
-
-/* WrapFormat (api/types/common.proto) */
-typedef enum agc_wrap_format {
-    AGC_WRAP_FORMAT_UNSPECIFIED = 0,
-    AGC_WRAP_FORMAT_PKCS8 = 1,
-    AGC_WRAP_FORMAT_PKCS1 = 2,
-    AGC_WRAP_FORMAT_RAW = 3,
-    AGC_WRAP_FORMAT_SPKI = 4,
-    AGC_WRAP_FORMAT_SEC1 = 5
-    AGC_ENUM32(agc_wrap_format)
-} agc_wrap_format;
-
-AGC_API const char *agc_wrap_format_name(agc_wrap_format v);
-AGC_API agc_rc agc_wrap_format_from_name(const char *name, agc_wrap_format *out);
-
-/* KeyFormat (api/types/common.proto) */
-typedef enum agc_key_format {
-    AGC_KEY_FORMAT_UNSPECIFIED = 0,
-    AGC_KEY_FORMAT_RAW = 1,
-    AGC_KEY_FORMAT_WRAPPED = 2,
-    AGC_KEY_FORMAT_PKCS8 = 3,
-    AGC_KEY_FORMAT_SPKI = 4,
-    AGC_KEY_FORMAT_JWK = 5,
-    AGC_KEY_FORMAT_PEM = 6,
-    AGC_KEY_FORMAT_SEC1 = 7
-    AGC_ENUM32(agc_key_format)
-} agc_key_format;
-
-AGC_API const char *agc_key_format_name(agc_key_format v);
-AGC_API agc_rc agc_key_format_from_name(const char *name, agc_key_format *out);
-
-/* CryptoOperation (api/types/common.proto) */
-typedef enum agc_crypto_operation {
-    AGC_CRYPTO_OPERATION_UNSPECIFIED = 0,
-    AGC_CRYPTO_OPERATION_CREATE_KEY = 1,
-    AGC_CRYPTO_OPERATION_READ_KEY = 2,
-    AGC_CRYPTO_OPERATION_DELETE_KEY = 3,
-    AGC_CRYPTO_OPERATION_ROTATE_KEY = 4,
-    AGC_CRYPTO_OPERATION_TRANSFORM_KEY = 5,
-    AGC_CRYPTO_OPERATION_IMPORT_KEY = 6,
-    AGC_CRYPTO_OPERATION_EXPORT_KEY = 7,
-    AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY = 8,
-    AGC_CRYPTO_OPERATION_MIGRATE_KEY = 9,
-    AGC_CRYPTO_OPERATION_ENCRYPT = 10,
-    AGC_CRYPTO_OPERATION_DECRYPT = 11,
-    AGC_CRYPTO_OPERATION_SIGN = 20,
-    AGC_CRYPTO_OPERATION_VERIFY = 21,
-    AGC_CRYPTO_OPERATION_DIGEST_SIGN = 22,
-    AGC_CRYPTO_OPERATION_DIGEST_VERIFY = 23,
-    AGC_CRYPTO_OPERATION_WRAP_KEY = 30,
-    AGC_CRYPTO_OPERATION_UNWRAP_KEY = 31,
-    AGC_CRYPTO_OPERATION_DERIVE_KEY = 40,
-    AGC_CRYPTO_OPERATION_GENERATE_MAC = 50,
-    AGC_CRYPTO_OPERATION_VERIFY_MAC = 51,
-    AGC_CRYPTO_OPERATION_DIGEST = 60,
-    AGC_CRYPTO_OPERATION_ENCAPSULATE = 70,
-    AGC_CRYPTO_OPERATION_DECAPSULATE = 71,
-    AGC_CRYPTO_OPERATION_KEY_AGREEMENT = 80,
-    AGC_CRYPTO_OPERATION_GENERATE_RANDOM = 90,
-    AGC_CRYPTO_OPERATION_SEED_RANDOM = 91,
-    AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT = 100,
-    AGC_CRYPTO_OPERATION_DECRYPT_DIGEST = 101,
-    AGC_CRYPTO_OPERATION_SIGN_ENCRYPT = 102,
-    AGC_CRYPTO_OPERATION_DECRYPT_VERIFY = 103
-    AGC_ENUM32(agc_crypto_operation)
-} agc_crypto_operation;
-
-AGC_API const char *agc_crypto_operation_name(agc_crypto_operation v);
-AGC_API agc_rc agc_crypto_operation_from_name(const char *name, agc_crypto_operation *out);
 
 /* HashAlgorithm (api/types/algorithm_params.proto) */
 typedef enum agc_hash_algorithm {
@@ -604,6 +355,271 @@ typedef enum agc_ecdh_kdf_type {
 
 AGC_API const char *agc_ecdh_kdf_type_name(agc_ecdh_kdf_type v);
 AGC_API agc_rc agc_ecdh_kdf_type_from_name(const char *name, agc_ecdh_kdf_type *out);
+
+/* SignatureScope (api/types/common.proto) */
+typedef enum agc_signature_scope {
+    AGC_SIGNATURE_SCOPE_UNSPECIFIED = 0,
+    AGC_SIGNATURE_SCOPE_STANDARD = 1,
+    AGC_SIGNATURE_SCOPE_WITH_CONTEXT = 2,
+    AGC_SIGNATURE_SCOPE_PREHASHED = 3,
+    AGC_SIGNATURE_SCOPE_PREHASHED_WITH_CONTEXT = 4
+    AGC_ENUM32(agc_signature_scope)
+} agc_signature_scope;
+
+AGC_API const char *agc_signature_scope_name(agc_signature_scope v);
+AGC_API agc_rc agc_signature_scope_from_name(const char *name, agc_signature_scope *out);
+
+/* AeadScope (api/types/common.proto) */
+typedef enum agc_aead_scope {
+    AGC_AEAD_SCOPE_UNSPECIFIED = 0,
+    AGC_AEAD_SCOPE_STANDARD = 1,
+    AGC_AEAD_SCOPE_DETERMINISTIC = 2,
+    AGC_AEAD_SCOPE_STREAMING = 3
+    AGC_ENUM32(agc_aead_scope)
+} agc_aead_scope;
+
+AGC_API const char *agc_aead_scope_name(agc_aead_scope v);
+AGC_API agc_rc agc_aead_scope_from_name(const char *name, agc_aead_scope *out);
+
+/* MacScope (api/types/common.proto) */
+typedef enum agc_mac_scope {
+    AGC_MAC_SCOPE_UNSPECIFIED = 0,
+    AGC_MAC_SCOPE_STANDARD = 1,
+    AGC_MAC_SCOPE_STREAMING = 2
+    AGC_ENUM32(agc_mac_scope)
+} agc_mac_scope;
+
+AGC_API const char *agc_mac_scope_name(agc_mac_scope v);
+AGC_API agc_rc agc_mac_scope_from_name(const char *name, agc_mac_scope *out);
+
+/* KemScope (api/types/common.proto) */
+typedef enum agc_kem_scope {
+    AGC_KEM_SCOPE_UNSPECIFIED = 0,
+    AGC_KEM_SCOPE_STANDARD = 1,
+    AGC_KEM_SCOPE_HYBRID = 2
+    AGC_ENUM32(agc_kem_scope)
+} agc_kem_scope;
+
+AGC_API const char *agc_kem_scope_name(agc_kem_scope v);
+AGC_API agc_rc agc_kem_scope_from_name(const char *name, agc_kem_scope *out);
+
+/* KeyAgreementScope (api/types/common.proto) */
+typedef enum agc_key_agreement_scope {
+    AGC_KEY_AGREEMENT_SCOPE_UNSPECIFIED = 0,
+    AGC_KEY_AGREEMENT_SCOPE_STANDARD = 1,
+    AGC_KEY_AGREEMENT_SCOPE_HYBRID = 2
+    AGC_ENUM32(agc_key_agreement_scope)
+} agc_key_agreement_scope;
+
+AGC_API const char *agc_key_agreement_scope_name(agc_key_agreement_scope v);
+AGC_API agc_rc agc_key_agreement_scope_from_name(const char *name, agc_key_agreement_scope *out);
+
+/* KdfScope (api/types/common.proto) */
+typedef enum agc_kdf_scope {
+    AGC_KDF_SCOPE_UNSPECIFIED = 0,
+    AGC_KDF_SCOPE_EXTRACT_EXPAND = 1,
+    AGC_KDF_SCOPE_PASSWORD = 2,
+    AGC_KDF_SCOPE_AGREEMENT = 3,
+    AGC_KDF_SCOPE_COUNTER = 4,
+    AGC_KDF_SCOPE_TLS = 5,
+    AGC_KDF_SCOPE_GOST = 6,
+    AGC_KDF_SCOPE_VENDOR = 7
+    AGC_ENUM32(agc_kdf_scope)
+} agc_kdf_scope;
+
+AGC_API const char *agc_kdf_scope_name(agc_kdf_scope v);
+AGC_API agc_rc agc_kdf_scope_from_name(const char *name, agc_kdf_scope *out);
+
+/* HashScope (api/types/common.proto) */
+typedef enum agc_hash_scope {
+    AGC_HASH_SCOPE_UNSPECIFIED = 0,
+    AGC_HASH_SCOPE_STANDARD = 1,
+    AGC_HASH_SCOPE_XOF = 2
+    AGC_ENUM32(agc_hash_scope)
+} agc_hash_scope;
+
+AGC_API const char *agc_hash_scope_name(agc_hash_scope v);
+AGC_API agc_rc agc_hash_scope_from_name(const char *name, agc_hash_scope *out);
+
+/* KeyWrappingScope (api/types/common.proto) */
+typedef enum agc_key_wrapping_scope {
+    AGC_KEY_WRAPPING_SCOPE_UNSPECIFIED = 0,
+    AGC_KEY_WRAPPING_SCOPE_STANDARD = 1,
+    AGC_KEY_WRAPPING_SCOPE_WITH_PADDING = 2
+    AGC_ENUM32(agc_key_wrapping_scope)
+} agc_key_wrapping_scope;
+
+AGC_API const char *agc_key_wrapping_scope_name(agc_key_wrapping_scope v);
+AGC_API agc_rc agc_key_wrapping_scope_from_name(const char *name, agc_key_wrapping_scope *out);
+
+/* SymmetricCipherScope (api/types/common.proto) */
+typedef enum agc_symmetric_cipher_scope {
+    AGC_SYMMETRIC_CIPHER_SCOPE_UNSPECIFIED = 0,
+    AGC_SYMMETRIC_CIPHER_SCOPE_BLOCK = 1,
+    AGC_SYMMETRIC_CIPHER_SCOPE_STREAM = 2
+    AGC_ENUM32(agc_symmetric_cipher_scope)
+} agc_symmetric_cipher_scope;
+
+AGC_API const char *agc_symmetric_cipher_scope_name(agc_symmetric_cipher_scope v);
+AGC_API agc_rc agc_symmetric_cipher_scope_from_name(const char *name, agc_symmetric_cipher_scope *out);
+
+/* DiskEncryptionScope (api/types/common.proto) */
+typedef enum agc_disk_encryption_scope {
+    AGC_DISK_ENCRYPTION_SCOPE_UNSPECIFIED = 0,
+    AGC_DISK_ENCRYPTION_SCOPE_STANDARD = 1
+    AGC_ENUM32(agc_disk_encryption_scope)
+} agc_disk_encryption_scope;
+
+AGC_API const char *agc_disk_encryption_scope_name(agc_disk_encryption_scope v);
+AGC_API agc_rc agc_disk_encryption_scope_from_name(const char *name, agc_disk_encryption_scope *out);
+
+/* GenericSecretScope (api/types/common.proto) */
+typedef enum agc_generic_secret_scope {
+    AGC_GENERIC_SECRET_SCOPE_UNSPECIFIED = 0,
+    AGC_GENERIC_SECRET_SCOPE_STANDARD = 1
+    AGC_ENUM32(agc_generic_secret_scope)
+} agc_generic_secret_scope;
+
+AGC_API const char *agc_generic_secret_scope_name(agc_generic_secret_scope v);
+AGC_API agc_rc agc_generic_secret_scope_from_name(const char *name, agc_generic_secret_scope *out);
+
+/* AsymmetricEncryptionScope (api/types/common.proto) */
+typedef enum agc_asymmetric_encryption_scope {
+    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_UNSPECIFIED = 0,
+    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_STANDARD = 1,
+    AGC_ASYMMETRIC_ENCRYPTION_SCOPE_RAW = 2
+    AGC_ENUM32(agc_asymmetric_encryption_scope)
+} agc_asymmetric_encryption_scope;
+
+AGC_API const char *agc_asymmetric_encryption_scope_name(agc_asymmetric_encryption_scope v);
+AGC_API agc_rc agc_asymmetric_encryption_scope_from_name(const char *name, agc_asymmetric_encryption_scope *out);
+
+/* KeyLifecycleState (api/types/common.proto) */
+typedef enum agc_key_lifecycle_state {
+    AGC_KEY_LIFECYCLE_STATE_UNSPECIFIED = 0,
+    AGC_KEY_LIFECYCLE_STATE_PRE_ACTIVE = 1,
+    AGC_KEY_LIFECYCLE_STATE_ACTIVE = 2,
+    AGC_KEY_LIFECYCLE_STATE_SUSPENDED = 3,
+    AGC_KEY_LIFECYCLE_STATE_DEACTIVATED = 4,
+    AGC_KEY_LIFECYCLE_STATE_COMPROMISED = 5,
+    AGC_KEY_LIFECYCLE_STATE_DESTROYED = 6,
+    AGC_KEY_LIFECYCLE_STATE_DESTROYED_COMPROMISED = 7
+    AGC_ENUM32(agc_key_lifecycle_state)
+} agc_key_lifecycle_state;
+
+AGC_API const char *agc_key_lifecycle_state_name(agc_key_lifecycle_state v);
+AGC_API agc_rc agc_key_lifecycle_state_from_name(const char *name, agc_key_lifecycle_state *out);
+
+/* KeyOrigin (api/types/common.proto) */
+typedef enum agc_key_origin {
+    AGC_KEY_ORIGIN_UNSPECIFIED = 0,
+    AGC_KEY_ORIGIN_GENERATED = 1,
+    AGC_KEY_ORIGIN_IMPORTED = 2,
+    AGC_KEY_ORIGIN_DERIVED = 3,
+    AGC_KEY_ORIGIN_UNWRAPPED = 4
+    AGC_ENUM32(agc_key_origin)
+} agc_key_origin;
+
+AGC_API const char *agc_key_origin_name(agc_key_origin v);
+AGC_API agc_rc agc_key_origin_from_name(const char *name, agc_key_origin *out);
+
+/* NistSecurityLevel (api/types/common.proto) */
+typedef enum agc_nist_security_level {
+    AGC_NIST_SECURITY_LEVEL_UNSPECIFIED = 0,
+    AGC_NIST_SECURITY_LEVEL_1 = 1,
+    AGC_NIST_SECURITY_LEVEL_2 = 2,
+    AGC_NIST_SECURITY_LEVEL_3 = 3,
+    AGC_NIST_SECURITY_LEVEL_4 = 4,
+    AGC_NIST_SECURITY_LEVEL_5 = 5
+    AGC_ENUM32(agc_nist_security_level)
+} agc_nist_security_level;
+
+AGC_API const char *agc_nist_security_level_name(agc_nist_security_level v);
+AGC_API agc_rc agc_nist_security_level_from_name(const char *name, agc_nist_security_level *out);
+
+/* NistStatus (api/types/common.proto) */
+typedef enum agc_nist_status {
+    AGC_NIST_STATUS_UNSPECIFIED = 0,
+    AGC_NIST_STATUS_APPROVED = 1,
+    AGC_NIST_STATUS_RECOMMENDED = 2,
+    AGC_NIST_STATUS_ACCEPTABLE = 3,
+    AGC_NIST_STATUS_DEPRECATED = 4,
+    AGC_NIST_STATUS_FORBIDDEN = 5
+    AGC_ENUM32(agc_nist_status)
+} agc_nist_status;
+
+AGC_API const char *agc_nist_status_name(agc_nist_status v);
+AGC_API agc_rc agc_nist_status_from_name(const char *name, agc_nist_status *out);
+
+/* WrapFormat (api/types/common.proto) */
+typedef enum agc_wrap_format {
+    AGC_WRAP_FORMAT_UNSPECIFIED = 0,
+    AGC_WRAP_FORMAT_PKCS8 = 1,
+    AGC_WRAP_FORMAT_PKCS1 = 2,
+    AGC_WRAP_FORMAT_RAW = 3,
+    AGC_WRAP_FORMAT_SPKI = 4,
+    AGC_WRAP_FORMAT_SEC1 = 5
+    AGC_ENUM32(agc_wrap_format)
+} agc_wrap_format;
+
+AGC_API const char *agc_wrap_format_name(agc_wrap_format v);
+AGC_API agc_rc agc_wrap_format_from_name(const char *name, agc_wrap_format *out);
+
+/* KeyFormat (api/types/common.proto) */
+typedef enum agc_key_format {
+    AGC_KEY_FORMAT_UNSPECIFIED = 0,
+    AGC_KEY_FORMAT_RAW = 1,
+    AGC_KEY_FORMAT_WRAPPED = 2,
+    AGC_KEY_FORMAT_PKCS8 = 3,
+    AGC_KEY_FORMAT_SPKI = 4,
+    AGC_KEY_FORMAT_JWK = 5,
+    AGC_KEY_FORMAT_PEM = 6,
+    AGC_KEY_FORMAT_SEC1 = 7
+    AGC_ENUM32(agc_key_format)
+} agc_key_format;
+
+AGC_API const char *agc_key_format_name(agc_key_format v);
+AGC_API agc_rc agc_key_format_from_name(const char *name, agc_key_format *out);
+
+/* CryptoOperation (api/types/common.proto) */
+typedef enum agc_crypto_operation {
+    AGC_CRYPTO_OPERATION_UNSPECIFIED = 0,
+    AGC_CRYPTO_OPERATION_CREATE_KEY = 1,
+    AGC_CRYPTO_OPERATION_READ_KEY = 2,
+    AGC_CRYPTO_OPERATION_DELETE_KEY = 3,
+    AGC_CRYPTO_OPERATION_ROTATE_KEY = 4,
+    AGC_CRYPTO_OPERATION_TRANSFORM_KEY = 5,
+    AGC_CRYPTO_OPERATION_IMPORT_KEY = 6,
+    AGC_CRYPTO_OPERATION_EXPORT_KEY = 7,
+    AGC_CRYPTO_OPERATION_UPDATE_KEY_POLICY = 8,
+    AGC_CRYPTO_OPERATION_MIGRATE_KEY = 9,
+    AGC_CRYPTO_OPERATION_UPDATE_KEY_STATE = 12,
+    AGC_CRYPTO_OPERATION_ENCRYPT = 10,
+    AGC_CRYPTO_OPERATION_DECRYPT = 11,
+    AGC_CRYPTO_OPERATION_SIGN = 20,
+    AGC_CRYPTO_OPERATION_VERIFY = 21,
+    AGC_CRYPTO_OPERATION_DIGEST_SIGN = 22,
+    AGC_CRYPTO_OPERATION_DIGEST_VERIFY = 23,
+    AGC_CRYPTO_OPERATION_WRAP_KEY = 30,
+    AGC_CRYPTO_OPERATION_UNWRAP_KEY = 31,
+    AGC_CRYPTO_OPERATION_DERIVE_KEY = 40,
+    AGC_CRYPTO_OPERATION_GENERATE_MAC = 50,
+    AGC_CRYPTO_OPERATION_VERIFY_MAC = 51,
+    AGC_CRYPTO_OPERATION_DIGEST = 60,
+    AGC_CRYPTO_OPERATION_ENCAPSULATE = 70,
+    AGC_CRYPTO_OPERATION_DECAPSULATE = 71,
+    AGC_CRYPTO_OPERATION_KEY_AGREEMENT = 80,
+    AGC_CRYPTO_OPERATION_GENERATE_RANDOM = 90,
+    AGC_CRYPTO_OPERATION_SEED_RANDOM = 91,
+    AGC_CRYPTO_OPERATION_DIGEST_ENCRYPT = 100,
+    AGC_CRYPTO_OPERATION_DECRYPT_DIGEST = 101,
+    AGC_CRYPTO_OPERATION_SIGN_ENCRYPT = 102,
+    AGC_CRYPTO_OPERATION_DECRYPT_VERIFY = 103
+    AGC_ENUM32(agc_crypto_operation)
+} agc_crypto_operation;
+
+AGC_API const char *agc_crypto_operation_name(agc_crypto_operation v);
+AGC_API agc_rc agc_crypto_operation_from_name(const char *name, agc_crypto_operation *out);
 
 /* TemplateStatus (api/types/templates.proto) */
 typedef enum agc_template_status {
