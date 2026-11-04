@@ -166,7 +166,13 @@ typedef struct agc_ctx_config {
 
 /* All agc_str/agc_slice fields of *cfg are copied; the caller need not keep
  * them alive past this call. Returns AGC_ERR_NOT_IMPLEMENTED for
- * AGC_MODE_LOCAL/AGC_MODE_REMOTE in this build. */
+ * AGC_MODE_LOCAL/AGC_MODE_REMOTE in this build.
+ *
+ * A setting the implementation cannot honour (fips_mode without a
+ * FIPS-validated provider, require_locked_memory, a catalog_path,
+ * provider_config_path or key_store_uri it cannot use) makes the call fail
+ * with AGC_ERR_NOT_IMPLEMENTED. It is never silently ignored: an ignored
+ * setting would promise a guarantee the library does not give. */
 AGC_API agc_rc agc_ctx_open(const agc_ctx_config *cfg, agc_ctx **out_ctx);
 
 /* Destroys the context. All handles derived from it become invalid. Any
