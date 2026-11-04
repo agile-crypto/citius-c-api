@@ -15,12 +15,22 @@ drift.
 
 | | |
 |---|---|
-| Source repo | `citius-server` |
-| Source commit | `476f9dd1ef20dedbbe7483474cc71acf41637445` |
-| Source path | `proto/api/**` |
-| `sha256sum api_descriptor.binpb` | `36480188a689a306992477334e6494efd7242b390efdab70a2c6156d9b309133` |
-| Files | 35 (see `tools/refresh_descriptor.sh` for the exact `buf build` invocation) |
-| Pinned on | 2026-08-24 |
+| Source repo | `citius/api` |
+| Source tag | `v0.3.0` (the release citius-api-go v0.3.0, used by citius-core and citius-server) |
+| Source commit | `2eb364a69b5a7ba41d3770af35248f452930a787` |
+| Source path | `proto/` (files at its top level; recorded under `api/`, see below) |
+| `shasum -a 256 api_descriptor.binpb` | `fd3978a909eafaa86e2e99d6ea1b32cd0addfb139eb8451cab6a54076df1c27c` |
+| Pinned on | 2026-11-04 |
+
+`citius/api` keeps its files at the top of `proto/`, while citius-server
+kept them under `api/`. The descriptor names them `api/...` either way, as
+`tools/gen_agc_types.py` and the conformance checks expect:
+`tools/refresh_descriptor.sh` copies the files under `api/` and rewrites
+their imports of each other. The messages are those of the tag, unchanged.
+
+The previous pin was citius-server `476f9dd` (2026-08-24), one release
+behind: v0.3.0 adds the digest-hash fields, and v0.2.0 before it about 218
+other breaking changes.
 
 ## Bumping the pin
 
