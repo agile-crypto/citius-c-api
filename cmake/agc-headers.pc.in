@@ -1,9 +1,7 @@
 prefix=@CMAKE_INSTALL_PREFIX@
-libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
 includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
 
-Name: agilecrypto
-Description: @PROJECT_DESCRIPTION@
+Name: agc-headers
+Description: @PROJECT_DESCRIPTION@ (headers only; link an implementation such as libagilecrypto)
 Version: @PROJECT_VERSION@
-Libs: -L${libdir} -lagilecrypto
 Cflags: -I${includedir}/agc

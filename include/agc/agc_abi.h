@@ -10,7 +10,7 @@
  * Kept separate from agc_types.h so that the "GENERATED — DO NOT EDIT" banner
  * on agc_types.h is actually true. Mixing hand-written scalar idioms into a
  * generated vocabulary file is how that banner stops being trustworthy — see
- * RECONCILIATION_PLAN.md §9 and C_API_COMPARISON.md finding B1.
+ * docs/history/RECONCILIATION_PLAN.md §9 and docs/history/C_API_COMPARISON.md finding B1.
  */
 
 #ifndef AGC_ABI_H
@@ -68,7 +68,7 @@ extern "C" {
 /* Every struct passed by pointer begins with `size_t struct_size`. Callers
  * MUST set it to sizeof(the struct they compiled against); the library uses
  * it to decide which trailing fields are present. This is the C substitute
- * for protobuf's free forward compatibility (RECONCILIATION_PLAN.md D7): a
+ * for protobuf's free forward compatibility (docs/history/RECONCILIATION_PLAN.md D7): a
  * caller built against 2.0 passing a smaller struct to a 2.1 library gets
  * defaults for the tail; a 2.1 caller passing a larger struct to a 2.0
  * library gets AGC_ERR_ABI_MISMATCH rather than a misread field. This holds
@@ -96,8 +96,8 @@ extern "C" {
  * absence is semantically load-bearing throughout this API -- in a request an
  * absent filter means "don't care", while `false` means "must NOT have this
  * property". Collapsing it to C `bool` would silently turn every "don't care"
- * into a hard "must be false" (RECONCILIATION_PLAN.md D8; this is precisely
- * the bug in the citius_* draft's own shipped example, C_API_COMPARISON.md
+ * into a hard "must be false" (docs/history/RECONCILIATION_PLAN.md D8; this is precisely
+ * the bug in the citius_* draft's own shipped example, docs/history/C_API_COMPARISON.md
  * finding A4).
  *
  * AGC_UNSET == 0 so a zeroed struct means "no filters", which is the safe

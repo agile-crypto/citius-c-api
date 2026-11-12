@@ -10,7 +10,7 @@
  * Each request struct is derived field-for-field from the real proto message,
  * verified directly against api/messages/key_management.proto. Where a field
  * exists here but not in the proto, or vice versa, it is a bug -- see
- * RECONCILIATION_PLAN.md §3.1 and conformance/DIVERGENCES.yaml for the only
+ * docs/history/RECONCILIATION_PLAN.md §3.1 and conformance/DIVERGENCES.yaml for the only
  * intentional exceptions.
  *
  * CALLER-ALLOCATED RECORDS

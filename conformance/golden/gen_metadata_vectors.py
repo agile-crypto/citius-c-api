@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Generates OperationMetadata golden vectors using the REAL protobuf
 library against the pinned descriptor (conformance/api_descriptor.binpb),
-not our own hand-written codec. test_metadata_codec.c decodes these with
-agc_metadata_decode() and checks field values, which is what actually
-proves the hand-written decoder in src/wire/metadata_codec.c is wire-
-compatible with a real protobuf implementation rather than merely
-self-consistent (RECONCILIATION_PLAN.md §9.2's stated condition for trusting
-the hand-written codec at all).
+never a hand-written codec.
 
-The reverse direction -- proving the C ENCODER produces bytes a real
-protobuf implementation reads back correctly -- is exercised by
-verify_c_encoded.py, run by CTest against files test_metadata_codec.c writes
-during its own run.
+Implementations check their metadata codec against these: decode each
+vector's bytes, compare the fields, and re-encode byte for byte. citius-rust
+does so in src/domain/crypto/metadata.rs
+(golden_protobuf_vectors_decode_and_re_encode_byte_for_byte).
 
 Run manually to regenerate:
-    python3 tests/golden/gen_metadata_vectors.py
+    python3 conformance/golden/gen_metadata_vectors.py
+
+Protobuf leaves the order of map entries open, and protobuf releases differ
+in it: regenerating can reorder the "vendor" vector's map, which is equally
+valid but no longer byte-identical to what implementations re-encode. Commit
+regenerated vectors only together with the implementations' matching update.
 """
 import json
 import sys

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tier 1b -- RPC <-> C entry-point surface bijection (RECONCILIATION_PLAN.md §7).
+"""Tier 1b -- RPC <-> C entry-point surface bijection (docs/history/RECONCILIATION_PLAN.md §7).
 
 Loads the pinned FileDescriptorSet and conformance/rpc_manifest.yaml, and
 checks, in both directions:
@@ -14,7 +14,7 @@ checks, in both directions:
 Also asserts the descriptor carries exactly 98 RPCs across exactly the 7
 service names the reconciliation targets -- no more, no fewer.
 
-This is the check that would have caught C_API_COMPARISON.md findings B1/B2
+This is the check that would have caught docs/history/C_API_COMPARISON.md findings B1/B2
 ("Version B invents 8 phantom RPCs", "claims 98 RPCs"): a function with no
 RPC behind it, or an RPC with no function, both fail loudly instead of
 surviving as an unnoticed drift between the header and the spec.

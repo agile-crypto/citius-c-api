@@ -5,7 +5,7 @@
  * HAND-WRITTEN. Defines the idioms the rest of the C binding is built from:
  * the context, errors, sessions, and the opaque handles that later headers
  * (agc_key.h, agc_crypto.h, ...) attach accessors to as their own commits
- * land. See RECONCILIATION_PLAN.md §1 (D1-D20) for the rationale behind
+ * land. See docs/history/RECONCILIATION_PLAN.md §1 (D1-D20) for the rationale behind
  * every convention below.
  *
  * THE CONVENTIONS
@@ -39,10 +39,10 @@
  *
  * DEPLOYMENT MODE
  * ----------------
- * This reconciliation implements AGC_MODE_EMBEDDED only: direct calls into
- * the in-process stub backend (src/stub/, wired in from commit 8 onward). No
- * transport exists for AGC_MODE_LOCAL/AGC_MODE_REMOTE in this tree;
- * agc_ctx_open() returns AGC_ERR_NOT_IMPLEMENTED for them. The design is
+ * An implementation may support only AGC_MODE_EMBEDDED: direct calls into
+ * the library in the caller's process. agc_ctx_open() returns
+ * AGC_ERR_NOT_IMPLEMENTED for a mode the implementation has no transport
+ * for (citius-rust: AGC_MODE_LOCAL and AGC_MODE_REMOTE). The design is
  * still mode-shaped (D13): a later transport layer plugs in at
  * agc_ctx_open() without changing any call site, which is the entire point
  * of making mode a context property rather than a compile-time choice.
@@ -71,7 +71,7 @@ extern "C" {
 /* The service surface. One context binds a policy engine, a template
  * catalog and a set of provider instances. It is the C analogue of "a
  * connection to the service", except that in AGC_MODE_EMBEDDED there is no
- * connection: calls are direct function calls into the stub backend. */
+ * connection: calls are direct function calls into the library. */
 typedef struct agc_ctx agc_ctx;
 
 /* A stateful multi-part or message-based operation. Replaces the proto's
@@ -132,8 +132,8 @@ typedef struct agc_ctx_config {
      * explicitly. */
     agc_str  default_policy;
 
-    /* Provider instance configuration source. NULL uses the built-in stub
-     * provider only. */
+    /* Provider instance configuration source. NULL uses the
+     * implementation's built-in providers only. */
     agc_str  provider_config_path;
 
     /* Idle TTL, in seconds, after which a streaming session is expired and

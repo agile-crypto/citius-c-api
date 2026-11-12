@@ -1,14 +1,16 @@
 # C API Mapping
 
+> **Note (2026-11):** this repository is now header-only. References below to `src/` describe the C stub implementation it used to contain; that code is in the git history before the commit "Make citius-c-api header-only". The implementation is [citius-rust](https://github.ibm.com/citius/citius-rust).
+
 How `include/agc/*.h` derives from `caas.crypto.v1` (`github.com/agile-crypto/api`), and why each
-foundational decision (D1-D20, `RECONCILIATION_PLAN.md` §1) is shaped the way it is. Every claim
+foundational decision (D1-D20, `docs/history/RECONCILIATION_PLAN.md` §1) is shaped the way it is. Every claim
 below cites a real location: the proto side as `citius-server@476f9dd:<path>:<line>` (the exact
 commit `conformance/api_descriptor.binpb` is pinned to — see `conformance/DESCRIPTOR_PROVENANCE.md`;
 not a link, since it is a different repository, but a real, checked citation, not a paraphrase),
 the C side as a normal path into this repository.
 
 This document explains *why* the mapping is shaped this way. For the exhaustive field-by-field
-transition tables, see `RECONCILIATION_PLAN.md` §2-§3. For every place the two sides are
+transition tables, see `docs/history/RECONCILIATION_PLAN.md` §2-§3. For every place the two sides are
 *deliberately* different, see `conformance/DIVERGENCES.yaml` — that file, not this one, is what CI
 checks the real header text against (`conformance/tier1c_fields.py`).
 
@@ -113,7 +115,7 @@ Verification never returns success-shaped output for a failed check.
 - Proto: `citius-server@476f9dd:proto/api/messages/metadata.proto:391`, `message OperationMetadata { ... }`.
 - C: `agc_metadata` (opaque, [`include/agc/agc_core.h`](../include/agc/agc_core.h)), encoded/decoded
   by a hand-written codec with no protobuf dependency:
-  [`src/wire/metadata_codec.c`](../src/wire/metadata_codec.c). Verified against the REAL protobuf
+  `src/wire/metadata_codec.c`. Verified against the REAL protobuf
   library in both directions: `tests/golden/verify_c_encoded.py` decodes C-encoded bytes with
   `google.protobuf`, and `tests/golden/gen_metadata_vectors.py` generates golden vectors the C
   decoder must reproduce.
@@ -144,14 +146,14 @@ Verification never returns success-shaped output for a failed check.
 ## D18 — Thread safety and fork handling
 
 - C only (no proto analogue — fork is a process-level hazard, not a wire concept):
-  [`src/core/ctx.c`](../src/core/ctx.c)'s `pthread_atfork` registration and
+  `src/core/ctx.c`'s `pthread_atfork` registration and
   `agc_ctx_reinit_after_fork()` ([`include/agc/agc_core.h`](../include/agc/agc_core.h)).
   `tests/test_fork.c` exercises the poison-and-recover cycle.
 
 ## D20 — Generated enum/string tables
 
 - [`include/agc/agc_types.h`](../include/agc/agc_types.h) and
-  [`src/core/agc_types.c`](../src/core/agc_types.c) are produced by
+  `src/core/agc_types.c` are produced by
   [`tools/gen_agc_types.py`](../tools/gen_agc_types.py) from `conformance/api_descriptor.binpb` —
   never hand-edited. `conformance/tier1_vocabulary.py` checks every proto enum value against its
   generated C enumerator, both directions, on every `ctest` run.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tier 1c -- oneof tag conformance (RECONCILIATION_PLAN.md §2.5, §4).
+"""Tier 1c -- oneof tag conformance (docs/history/RECONCILIATION_PLAN.md §2.5, §4).
 
 Some C tagged unions use the proto FIELD NUMBER of each oneof arm as the tag
 value (agc_scope_kind, agc_custom_params_kind, and more added in later

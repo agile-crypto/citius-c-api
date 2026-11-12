@@ -1,15 +1,15 @@
-# Machine-readable divergence register (RECONCILIATION_PLAN.md §4, D15).
+# Machine-readable divergence register (docs/history/RECONCILIATION_PLAN.md §4, D15).
 #
 # Every deliberate deviation of the C ABI from the wire proto is entered
 # here. This is the contract that makes the whole reconciliation checkable:
 # a construct that exists in the C headers but not the proto, or vice
 # versa, and is not listed here, is a bug by definition -- not a design
-# choice nobody wrote down. Version B's failure mode (C_API_COMPARISON.md)
+# choice nobody wrote down. Version B's failure mode (docs/history/C_API_COMPARISON.md)
 # was exactly this: divergences that were *discovered* during audit rather
 # than *declared* at design time.
 #
 # Schema per entry:
-#   id:        DV-NN, matches RECONCILIATION_PLAN.md §4
+#   id:        DV-NN, matches docs/history/RECONCILIATION_PLAN.md §4
 #   summary:   one line
 #   reason:    why this divergence exists
 #   scope:     RPCs/messages/fields it applies to
@@ -189,7 +189,7 @@ divergences:
       parameter data behind any entry to project in the first place, so
       TemplateInfo.deprecation_notice and ScopeInfo.typical_use_cases /
       supported_operations have nothing genuine to populate them with
-      either -- every catalog entry is synthetic (RECONCILIATION_PLAN.md's
+      either -- every catalog entry is synthetic (docs/history/RECONCILIATION_PLAN.md's
       stub cryptography, applied to the catalog rather than the ciphers).
     scope:
       - GetTemplate

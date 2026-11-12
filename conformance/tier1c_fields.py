@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tier 1c -- request/response field presence (RECONCILIATION_PLAN.md §7).
+"""Tier 1c -- request/response field presence (docs/history/RECONCILIATION_PLAN.md §7).
 
 For every RPC in the pinned descriptor, takes its request and response
 message's TOP-LEVEL fields and asserts each field's name appears as an
@@ -120,13 +120,22 @@ def load_service_rpcs():
 
 
 def header_tokens(header_name, cache={}):
+    """The identifier tokens of `header_name` and of every agc header it
+    includes, transitively: a service header (agc_key.h) declares its entry
+    points, and the request/response structs live in the *_types.h header
+    it includes."""
+    import re
     if header_name not in cache:
+        cache[header_name] = set()  # guards against include cycles
         text = (INCLUDE_DIR / header_name).read_text()
         # Split on non-identifier characters; keep the token set only (a
         # dumb but adequate substitute for real tokenisation here, matching
         # the stated style of every other Tier 1* check in this directory).
-        import re
-        cache[header_name] = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", text))
+        tokens = set(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", text))
+        for inc in re.findall(r'^\s*#\s*include\s+"([^"]+)"', text, re.M):
+            if (INCLUDE_DIR / inc).is_file():
+                tokens |= header_tokens(inc)
+        cache[header_name] = tokens
     return cache[header_name]
 
 

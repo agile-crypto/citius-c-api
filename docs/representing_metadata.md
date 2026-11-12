@@ -1,6 +1,8 @@
 # Representing `OperationMetadata` in the C API
 
-Status: design study. Companion to `RECONCILIATION_PLAN.md` D6/D11 and to
+> **Note (2026-11):** the measurements and the `src/` references here were made on the C stub implementation this repository used to contain (see the git history before "Make citius-c-api header-only"). The analysis of the representations does not depend on it.
+
+Status: design study. Companion to `docs/history/RECONCILIATION_PLAN.md` D6/D11 and to
 `tink-wire-format-vs-protobuf.md`. Numbers quoted here were measured on this
 tree (`src/wire/metadata_codec.c`, stub backend) compiled with clang at `-O2`
 on an Apple Silicon laptop; sources and instructions are in

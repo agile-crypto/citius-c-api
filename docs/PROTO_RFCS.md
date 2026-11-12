@@ -1,7 +1,7 @@
 # Proto RFCs
 
 Fifteen proposed changes to `github.com/agile-crypto/api`, found while reconciling this C binding
-against the real wire specification (see `RECONCILIATION_PLAN.md` §5 for the original list, §9.3
+against the real wire specification (see `docs/history/RECONCILIATION_PLAN.md` §5 for the original list, §9.3
 for the discussion of why RFC-04 in particular is not optional). Each RFC that has a corresponding
 C function today has it in `include/agc/agc_ext.h`, gated behind `AGC_ENABLE_PROPOSED_EXTENSIONS`
 and excluded from Tier 1b/1c conformance (D16): the core's "exactly the proto's RPCs" claim must stay true

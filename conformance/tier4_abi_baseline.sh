@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
-# Tier 4 -- ABI stability (RECONCILIATION_PLAN.md §7): a layout change to an
+# Tier 4 -- ABI stability (docs/history/RECONCILIATION_PLAN.md §7): a layout change to an
 # EXISTING field must fail this check unless it comes with a version-script
 # entry and a rationale. Uses libabigail's abidw/abidiff, the same tool
 # real C library releases (glibc, systemd, ...) gate on.
 #
 # Usage:
+# The headers define the ABI, but only a built library has one: point
+# AGC_ABI_LIB at an implementation's shared library (citius-rust:
+# target/release/libagilecrypto.so). Without it the check skips.
+#
 #   tier4_abi_baseline.sh baseline   -- (re)generate conformance/abi-baseline.xml
-#                                        from the CURRENTLY BUILT libagilecrypto.so.
+#                                        from the library at $AGC_ABI_LIB.
 #                                        Run this deliberately, once per accepted
 #                                        ABI change, never automatically.
 #   tier4_abi_baseline.sh check      -- abidiff the current build against the
@@ -23,8 +27,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BUILD_DIR="${AGC_ABI_BUILD_DIR:-$ROOT/build}"
-LIB="$BUILD_DIR/libagilecrypto.so"
+LIB="${AGC_ABI_LIB:-}"
 BASELINE="$ROOT/conformance/abi-baseline.xml"
 MODE="${1:-check}"
 
@@ -34,8 +37,12 @@ if ! command -v abidw >/dev/null 2>&1; then
     exit 0
 fi
 
+if [ -z "$LIB" ]; then
+    echo "tier4_abi: AGC_ABI_LIB not set (path to an implementation's libagilecrypto) -- skipping." >&2
+    exit 0
+fi
 if [ ! -f "$LIB" ]; then
-    echo "tier4_abi: $LIB not found -- build agilecrypto first." >&2
+    echo "tier4_abi: $LIB not found." >&2
     exit 1
 fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tier 1 -- vocabulary conformance (RECONCILIATION_PLAN.md §7).
+"""Tier 1 -- vocabulary conformance (docs/history/RECONCILIATION_PLAN.md §7).
 
 Loads the pinned FileDescriptorSet directly (not conformance/manifest.json,
 which is generator OUTPUT and could in principle drift from agc_types.h the
@@ -12,7 +12,7 @@ with a small, deliberately dumb regex extractor. Asserts:
   3. Every CryptoErrorCode value has an AGC_ERR_CRYPTO_* code satisfying
      agc_rc == -(1000 + wire_value).
 
-This is the check that C_API_COMPARISON.md finding B1 says should have
+This is the check that docs/history/C_API_COMPARISON.md finding B1 says should have
 existed from day one: the previous draft's agc_types.h carried a "hard
 invariant, enforced in CI" banner with no enforcement mechanism behind it,
 and defined two error codes that do not exist on the wire. Run this on every

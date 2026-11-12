@@ -11,7 +11,7 @@
  * github.com/agile-crypto/api (package caas.crypto.v1). The protobuf remains
  * normative for VOCABULARY and SEMANTICS; this header is normative for the
  * LOCAL ABI. See docs/C_API_MAPPING.md for the derivation and
- * RECONCILIATION_PLAN.md for how this tree was assembled.
+ * docs/history/RECONCILIATION_PLAN.md for how this tree was assembled.
  *
  * Coverage: all 90 RPCs across all 7 services. Every deliberate divergence
  * from the wire specification is recorded in conformance/DIVERGENCES.yaml and
@@ -19,7 +19,7 @@
  * third category between "matches the proto" and "documented exception".
  *
  * This aggregate header grows across the reconciliation commits; see
- * RECONCILIATION_PLAN.md §6 for the sequencing.
+ * docs/history/RECONCILIATION_PLAN.md §6 for the sequencing.
  */
 
 #ifndef AGILECRYPTO_H

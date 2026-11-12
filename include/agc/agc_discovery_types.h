@@ -28,7 +28,7 @@
  * COVERAGE: agc_template_info projects every field of proto TemplateInfo,
  * including the 44-arm AlgorithmDetails oneof (agc_algorithm_params, in
  * agc_algorithm_params.h) and the 14-field CycloneDX record. This reverses
- * the earlier scoping decision of RECONCILIATION_PLAN.md §2.6, which
+ * the earlier scoping decision of docs/history/RECONCILIATION_PLAN.md §2.6, which
  * excluded both from the ABI; the cost is that adding an algorithm to the
  * catalog now adds an arm to a public union. See
  * docs/c_vs_proto_constraints.md for the constraints the proto expresses

@@ -8,7 +8,7 @@
  * EnumDescriptorProto of its own — the "tag == proto field number" mapping
  * below is a hand-derived convention, cross-checked against the pinned
  * descriptor by conformance/tier1c_oneof_tags.py rather than left to eyeball
- * review (see RECONCILIATION_PLAN.md §2.5, §4 DV entries, and the "oneof tag
+ * review (see docs/history/RECONCILIATION_PLAN.md §2.5, §4 DV entries, and the "oneof tag
  * numbers" caution in that plan review section).
  *
  * ScopeSpecification is used with a DUAL INTERPRETATION, preserved exactly:

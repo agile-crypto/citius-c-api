@@ -1,4 +1,4 @@
-# Machine-checked RPC <-> C entry-point bijection (RECONCILIATION_PLAN.md
+# Machine-checked RPC <-> C entry-point bijection (docs/history/RECONCILIATION_PLAN.md
 # §7 Tier 1b). Hand-authored once, from the same header work done in
 # commits 7-11, then verified by tier1b_surface.py against BOTH directions:
 #
@@ -10,7 +10,7 @@
 #             or listed in `non_rpc_ctx_helpers` below with a reason.
 #
 # This is the structural fix for the audit's "Version B invented 8 phantom
-# RPCs" and "claimed 98 RPCs" findings (C_API_COMPARISON.md B1/B2): a
+# RPCs" and "claimed 98 RPCs" findings (docs/history/C_API_COMPARISON.md B1/B2): a
 # function that exists but maps to no real RPC, or an RPC with no function,
 # both fail the check instead of going unnoticed.
 #

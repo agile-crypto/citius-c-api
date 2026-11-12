@@ -35,16 +35,15 @@
  * -----------------------------------
  * For every decrypt-shaped stream, plaintext released by Update/Next before
  * the final call is NOT authenticated. This is stated in the proto and is
- * also the natural consequence of how the stub backend computes ciphertext
- * incrementally per chunk (a pure function of key/nonce/offset) while the
- * authentication tag can only be computed once the complete message is
- * known, at Final. Callers MUST buffer and MUST NOT act on early plaintext
+ * the nature of streaming AEAD: ciphertext is processed chunk by chunk,
+ * while the authentication tag can only be checked once the complete
+ * message is known, at Final. Callers MUST buffer and MUST NOT act on early plaintext
  * until the closing call returns AGC_OK. Authentication failure returns
  * AGC_ERR_CRYPTO_AUTHENTICATION_FAILED and releases nothing further.
  *
  * SESSIONS, NOT STRINGS
  * ----------------------
- * See agc_core.h's Sessions section and RECONCILIATION_PLAN.md D10: the
+ * See agc_core.h's Sessions section and docs/history/RECONCILIATION_PLAN.md D10: the
  * service issues the operation_id (EncryptInitResponse.operation_id etc.,
  * since api v0.3.0); the caller cannot choose it. Every Init function
  * returns a session, and agc_session_id() gives its operation_id, which

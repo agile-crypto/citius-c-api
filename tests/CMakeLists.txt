@@ -1,80 +1,71 @@
-# Each reconciliation commit appends its own test binary here rather than
-# globbing, so an accidentally-omitted test fails visibly instead of silently
-# not running.
+# Checks on the headers themselves; no library is built or linked. The
+# behaviour behind the headers is tested by their implementation
+# (citius-rust: tests/c, against libagilecrypto).
 
-find_package(Threads REQUIRED)
+set(AGC_WARNINGS -Wall -Wextra -Wpedantic -Werror)
+file(GLOB AGC_HEADERS RELATIVE ${PROJECT_SOURCE_DIR}/include/agc ${PROJECT_SOURCE_DIR}/include/agc/*.h)
 
-function(agc_add_test name)
-    add_executable(${name} ${ARGN})
-    target_link_libraries(${name} PRIVATE agilecrypto Threads::Threads)
-    target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
-    add_test(NAME ${name} COMMAND ${name})
-endfunction()
+# Every header compiles on its own, as C99, C11 and (if a C++ compiler is
+# available) C++11: the build fails on a header that does not.
+set(_hdr_dir ${CMAKE_CURRENT_BINARY_DIR}/standalone)
+foreach(h ${AGC_HEADERS})
+    string(REPLACE ".h" "" n ${h})
+    file(WRITE ${_hdr_dir}/${n}.c "#include \"${h}\"\nint agc_standalone_${n};\n")
+    file(WRITE ${_hdr_dir}/${n}.cpp "#include \"${h}\"\nint agc_standalone_${n};\n")
+    set(_srcs_c ${_srcs_c} ${_hdr_dir}/${n}.c)
+    set(_srcs_cxx ${_srcs_cxx} ${_hdr_dir}/${n}.cpp)
+endforeach()
 
-# For tests needing an internal-only symbol (agc_internal.h) -- see the
-# whitebox target comment in the top-level CMakeLists.txt.
-function(agc_add_whitebox_test name)
-    add_executable(${name} ${ARGN})
-    target_link_libraries(${name} PRIVATE agilecrypto_whitebox Threads::Threads)
-    target_include_directories(${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
-    add_test(NAME ${name} COMMAND ${name})
-endfunction()
+foreach(std 99 11)
+    add_library(headers_c${std} OBJECT ${_srcs_c})
+    target_link_libraries(headers_c${std} PRIVATE agc::headers)
+    set_target_properties(headers_c${std} PROPERTIES C_STANDARD ${std} C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+    target_compile_options(headers_c${std} PRIVATE ${AGC_WARNINGS})
+    set_source_files_properties(${_hdr_dir}/agc_ext.c TARGET_DIRECTORY headers_c${std}
+        PROPERTIES COMPILE_DEFINITIONS AGC_ENABLE_PROPOSED_EXTENSIONS=1)
+endforeach()
 
-agc_add_test(test_version test_version.c)
-agc_add_test(test_types test_types.c)
-agc_add_test(test_abi test_abi.c)
-agc_add_test(test_scope_params test_scope_params.c)
-agc_add_test(test_ctx test_ctx.c)
-agc_add_test(test_error test_error.c)
-agc_add_test(test_memory test_memory.c)
-agc_add_test(test_session test_session.c)
-agc_add_test(test_fork test_fork.c)
-agc_add_test(test_key_management test_key_management.c)
-agc_add_test(test_crypto test_crypto.c)
-agc_add_test(test_streaming test_streaming.c)
-agc_add_test(test_key_establishment test_key_establishment.c)
-agc_add_test(test_policy test_policy.c)
-agc_add_test(test_discovery test_discovery.c)
-agc_add_test(test_provider test_provider.c)
-agc_add_whitebox_test(test_protobuf_wire test_protobuf_wire.c)
-agc_add_whitebox_test(test_metadata_codec test_metadata_codec.c)
-
-if(AGC_ENABLE_PROPOSED_EXTENSIONS)
-    agc_add_test(test_ext test_ext.c)
+if(CMAKE_CXX_COMPILER)
+    add_library(headers_cxx11 OBJECT ${_srcs_cxx})
+    target_link_libraries(headers_cxx11 PRIVATE agc::headers)
+    set_target_properties(headers_cxx11 PROPERTIES CXX_STANDARD 11 CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
+    target_compile_options(headers_cxx11 PRIVATE ${AGC_WARNINGS})
+    set_source_files_properties(${_hdr_dir}/agc_ext.cpp TARGET_DIRECTORY headers_cxx11
+        PROPERTIES COMPILE_DEFINITIONS AGC_ENABLE_PROPOSED_EXTENSIONS=1)
 endif()
 
-# Tier 1 vocabulary conformance (RECONCILIATION_PLAN.md §7): the generated
-# agc_types.h must carry exactly the proto's enum values, no more, no fewer.
+# Layout and idiom checks that need only the headers (AGC_INIT, presence
+# types, bounded arrays), built and run as C99 and C11.
+foreach(t test_abi test_scope_params)
+    foreach(std 99 11)
+        add_executable(${t}_c${std} ${t}.c)
+        target_link_libraries(${t}_c${std} PRIVATE agc::headers)
+        target_include_directories(${t}_c${std} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
+        set_target_properties(${t}_c${std} PROPERTIES C_STANDARD ${std} C_STANDARD_REQUIRED ON C_EXTENSIONS OFF)
+        target_compile_options(${t}_c${std} PRIVATE ${AGC_WARNINGS})
+        add_test(NAME ${t}_c${std} COMMAND ${t}_c${std})
+    endforeach()
+endforeach()
+
+# Conformance against the pinned proto descriptor. The checks need the
+# Python packages protobuf and pyyaml; without them they are left out with
+# a message, rather than registered to fail.
 find_package(Python3 COMPONENTS Interpreter)
 if(Python3_FOUND)
-    add_test(NAME tier1_vocabulary
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/conformance/tier1_vocabulary.py)
-    add_test(NAME tier1c_oneof_tags
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/conformance/tier1c_oneof_tags.py)
-
-    # Tier 1b/1c (RECONCILIATION_PLAN.md §7, commit 12): RPC<->function
-    # surface bijection and request/response field presence, both checked
-    # against conformance/rpc_manifest.yaml and conformance/DIVERGENCES.yaml.
-    add_test(NAME tier1b_surface
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/conformance/tier1b_surface.py)
-    add_test(NAME tier1c_fields
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/conformance/tier1c_fields.py)
-
-    # Cross-implementation check for the hand-written OperationMetadata codec
-    # (RECONCILIATION_PLAN.md D11, §9.2): test_metadata_codec writes bytes it
-    # encoded to c_encoded_vectors/*.bin; this decodes them with the REAL
-    # protobuf library and checks field values, proving the encoder is wire-
-    # compatible rather than merely self-consistent. Must run after the C
-    # test that produces the files.
-    add_test(NAME verify_c_encoded_metadata
-             COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/golden/verify_c_encoded.py)
-    set_tests_properties(verify_c_encoded_metadata PROPERTIES DEPENDS test_metadata_codec)
+    execute_process(COMMAND ${Python3_EXECUTABLE} -c "import google.protobuf, yaml"
+                    RESULT_VARIABLE _agc_py_deps OUTPUT_QUIET ERROR_QUIET)
+endif()
+if(Python3_FOUND AND _agc_py_deps EQUAL 0)
+    foreach(c tier1_vocabulary tier1b_surface tier1c_fields tier1c_oneof_tags)
+        add_test(NAME ${c} COMMAND ${Python3_EXECUTABLE} ${PROJECT_SOURCE_DIR}/conformance/${c}.py)
+    endforeach()
+else()
+    message(STATUS "Conformance checks skipped: they need Python 3 with protobuf and pyyaml (pip install protobuf pyyaml)")
 endif()
 
-# Tier 4 ABI stability (RECONCILIATION_PLAN.md §7): skips (exit 0) rather
-# than fails when libabigail is not installed or no baseline exists yet
-# (pre-1.0) -- see the script header for why that is not a false pass.
-add_test(NAME tier4_abi
-         COMMAND ${CMAKE_SOURCE_DIR}/conformance/tier4_abi_baseline.sh check)
-set_tests_properties(tier4_abi PROPERTIES
-    ENVIRONMENT "AGC_ABI_BUILD_DIR=$<TARGET_FILE_DIR:agilecrypto>")
+# Tier 4 ABI stability, against an implementation's library: configure with
+# -DAGC_ABI_LIB=/path/to/libagilecrypto.so. Skips without it, or without
+# libabigail.
+set(AGC_ABI_LIB "" CACHE FILEPATH "An implementation's shared library, for the Tier 4 ABI check")
+add_test(NAME tier4_abi COMMAND ${PROJECT_SOURCE_DIR}/conformance/tier4_abi_baseline.sh check)
+set_tests_properties(tier4_abi PROPERTIES ENVIRONMENT "AGC_ABI_LIB=${AGC_ABI_LIB}")

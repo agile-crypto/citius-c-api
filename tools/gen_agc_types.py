@@ -6,10 +6,10 @@ conformance/api_descriptor.binpb.
 The header declares an agc_<enum>_name / agc_<enum>_from_name pair per enum;
 implementations define them (citius-rust generates its own from the header).
 
-This is the mechanism referenced throughout RECONCILIATION_PLAN.md: agc_types.h
+This is the mechanism referenced throughout docs/history/RECONCILIATION_PLAN.md: agc_types.h
 carries numeric equality with the wire enums as a hard, checkable invariant
 (see conformance/tier1_vocabulary.py), which only holds if the file is never
-hand-edited. C_API_COMPARISON.md finding B1 was exactly this promise being
+hand-edited. docs/history/C_API_COMPARISON.md finding B1 was exactly this promise being
 broken by a hand edit with no generator behind it at all.
 
 "Generated" here means: the output is a deterministic function of (a)
@@ -60,7 +60,7 @@ LOCAL_ERROR_CODES = [
 
 # ---------------------------------------------------------------------------
 # Hand-authored input #2: the one nested enum promoted out of the
-# catalog-internal algorithm_params.proto tree. See RECONCILIATION_PLAN.md
+# catalog-internal algorithm_params.proto tree. See docs/history/RECONCILIATION_PLAN.md
 # §2.2 — CombinerStrategy is generated because CBOM reporting needs to name
 # the hybrid combiner even though HybridAlgorithmParams itself is not
 # projected (§2.6). No other nested enum is included; the other 16 stay
