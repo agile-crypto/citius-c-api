@@ -17,6 +17,14 @@ int main(void)
     AGC_ASSERT_EQ_INT(p.x, 0);
     AGC_ASSERT(p.name == NULL);
 
+    /* AGC_FIELD_FITS: a field fits only if it lies wholly within the
+     * caller's struct_size (an older, smaller struct lacks the tail). */
+    AGC_ASSERT(AGC_FIELD_FITS(fake_params, &p, name));
+    p.struct_size = offsetof(fake_params, name);
+    AGC_ASSERT(AGC_FIELD_FITS(fake_params, &p, x));
+    AGC_ASSERT(!AGC_FIELD_FITS(fake_params, &p, name));
+    p.struct_size = sizeof(p);
+
     /* agc_tribool: UNSET is the zero value, so a zeroed struct means
      * "no filters" rather than "must be false" -- this is the exact bug
      * documented in C_API_COMPARISON.md finding A4 for the citius_* draft. */

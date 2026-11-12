@@ -221,7 +221,7 @@ typedef struct agc_digest_request {
     agc_kv_list                     provider_configuration; /* may be empty */
     const agc_provider_requirements *provider_requirements; /* NULL => no filter */
     agc_slice                       data;
-    const char                      *policy_name;           /* REQUIRED - policy governing the operation */
+    const char                      *policy_name;           /* policy governing the operation; NULL => the context's default_policy */
     agc_kv_list                     user_context;
 } agc_digest_request;
 
@@ -255,7 +255,7 @@ typedef struct agc_xof_request {
     const agc_provider_requirements *provider_requirements; /* NULL => no filter */
     agc_slice                       data;
     uint32_t                        output_length_bytes;    /* REQUIRED; resp->output must hold this many */
-    const char                      *policy_name;           /* REQUIRED - policy governing the operation */
+    const char                      *policy_name;           /* policy governing the operation; NULL => the context's default_policy */
     agc_kv_list                     user_context;
 } agc_xof_request;
 

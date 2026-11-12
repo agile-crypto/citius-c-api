@@ -70,23 +70,29 @@ extern "C" {
  * it to decide which trailing fields are present. This is the C substitute
  * for protobuf's free forward compatibility (docs/history/RECONCILIATION_PLAN.md D7): a
  * caller built against 1.0 passing a smaller struct to a 1.1 library gets
- * defaults for the tail; a 1.1 caller passing a larger struct to a 1.0
- * library gets AGC_ERR_ABI_MISMATCH rather than a misread field. This holds
+ * defaults for the tail. A 1.1 caller passing a larger struct to a 1.0
+ * library is accepted if every byte the 1.0 library does not know is zero
+ * (the caller set none of the newer fields), and gets AGC_ERR_ABI_MISMATCH
+ * otherwise: a field the caller set is never silently ignored. Zeroing the
+ * whole struct first (AGC_INIT) is what makes the newer fields read as
+ * unset; a struct filled field by field on the stack may carry non-zero
+ * padding there. This holds
  * within one major version only: a minor version appends fields solely to
  * structs that are not embedded in another, since growing an embedded
  * struct moves the fields after it. */
 #define AGC_INIT(p) \
     do { memset((p), 0, sizeof(*(p))); (p)->struct_size = sizeof(*(p)); } while (0)
 
-/* True if `field` lies entirely within the first `(p)->struct_size` bytes of
- * *p. The library uses this before writing any field of a versioned OUTPUT
+/* True if `field` of struct type `type` lies entirely within the first
+ * `(p)->struct_size` bytes of *p. The library uses this before writing any
+ * field of a versioned OUTPUT
  * struct, so a caller compiled against an older (smaller) header never has a
  * value written past the tail of the struct they actually allocated -- the
  * other half of the AGC_INIT contract (D7): an old caller gets defaults
  * (here: simply un-written, still-zeroed-by-them fields) for a field a newer
  * library knows about but the old header didn't declare. */
-#define AGC_FIELD_FITS(p, field) \
-    (offsetof(__typeof__(*(p)), field) + sizeof((p)->field) <= (p)->struct_size)
+#define AGC_FIELD_FITS(type, p, field) \
+    (offsetof(type, field) + sizeof(((type *)0)->field) <= (p)->struct_size)
 
 
 /* --------------------------------------------------------------------------

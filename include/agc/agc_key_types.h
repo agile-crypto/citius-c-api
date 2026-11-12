@@ -148,11 +148,11 @@ typedef struct agc_create_key_params {
     size_t struct_size;
 
     const char *key_name;     /* REQUIRED */
-    const char *policy_name;  /* REQUIRED */
+    const char *policy_name;  /* NULL => the context's default_policy; without one, AGC_ERR_INVALID_ARGUMENT */
     const char *provider_id;  /* NULL => policy selects */
     agc_kv_list provider_configuration;
 
-    const agc_scope_spec scope_spec;   /* REQUIRED */
+    agc_scope_spec scope_spec;         /* REQUIRED */
     const char           *template_id; /* NULL => policy selects */
 
     const agc_provider_requirements *provider_requirements; /* NULL => no filter */

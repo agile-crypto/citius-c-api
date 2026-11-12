@@ -762,8 +762,8 @@ truth where they differ from the text above.
   `agc_provider_output` holds `nonce`, `iv`, `salt`, `counter_block`,
   `block_counter`, each an `agc_slice` into `agc_metadata.storage`;
   the vendor arm is a decoded `agc_kb_list`, not an encoded slice. The union
-  is named `u`. Measured sizes are those of `considerations.md` §1: 56 bytes
-  for `agc_provider_output`, 120 for `agc_metadata`.
+  is named `u`. Measured with the 1.0 headers on a 64-bit (LP64) target:
+  56 bytes for `agc_provider_output`, 104 for `agc_metadata`.
 - **No bounds.** None of the `AGC_MD_*` constants of §2, §4.1, §5.3 and §6.6
   exist: no maximum encoded length, no nonce/IV/salt/counter bound beyond
   the width of the wire length field, no `AGC_MD_MAX_ENCODED_LEN_STD`, no

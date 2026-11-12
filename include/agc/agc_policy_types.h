@@ -5,13 +5,10 @@
  * The request and response structs of agc_policy.h, separated from the
  * function declarations.
  *
- * Fields verified directly against the proto: there is NO policy format and
- * NO optimistic-concurrency version anywhere on the wire
- * (CreateCryptoPolicyRequest is {name, policy_document}; PolicySummary is
- * {name, created_at, updated_at}) -- an earlier draft of this reconciliation
- * invented a format string, a version counter, and a
- * CRYPTO_ERROR_POLICY_VERSION_CONFLICT code to go with it. See
- * docs/PROTO_RFCS.md RFC-02 for that as a proposed extension.
+ * Fields verified against the proto (api v0.3.0): a policy carries a
+ * `format` tag next to its document, and a `version` that UpdateCryptoPolicy
+ * checks through `expected_version` (optimistic concurrency; a stale value
+ * fails with AGC_ERR_CRYPTO_POLICY_VERSION_CONFLICT).
  *
  * The policy document itself stays an OPAQUE STRING, exactly as in the
  * proto -- the API deliberately does not know whether a deployment writes

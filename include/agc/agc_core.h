@@ -13,12 +13,17 @@
  * 1. Every call returns agc_rc. AGC_OK == 0. Nothing else is a success.
  * 2. Every byte output uses the two-call convention (agc_buf, agc_abi.h).
  *    The library never allocates a buffer the caller frees with free().
- * 3. Every rich message output is an opaque handle with typed accessors,
- *    freed with its own agc_*_free. Deep aggregate structs never cross the
- *    ABI (D6) — that is what keeps the algorithm catalog out of the ABI.
+ * 3. Every record the caller reads (agc_key_info, agc_metadata, ...) is a
+ *    caller-allocated struct; its variable-length fields are copied into a
+ *    caller-provided `storage` region (the STORAGE CONTRACT in the *_types.h
+ *    headers). Only what holds secret state or a lifecycle is an opaque,
+ *    library-owned handle: agc_ctx, agc_session and the iterators, each
+ *    released by its own function (docs/agc_crypto.md).
  * 4. Every struct passed by pointer begins with `size_t struct_size`. Use
  *    AGC_INIT() to zero it and set the size.
  * 5. Nothing in this API allocates on the caller's allocator or frees on it.
+ * 6. A function that hands out a handle through an `out_*` pointer sets it
+ *    to NULL first, so on failure the caller's variable holds NULL.
  *
  * THREADING
  * ---------
@@ -61,11 +66,9 @@ extern "C" {
 /* --------------------------------------------------------------------------
  * Opaque handles
  *
- * Forward-declared here even though most gain accessors only once their
- * owning commit lands (agc_metadata: commit 6; agc_key_info and the
- * migration/feasibility reports: commit 7; agc_impl_props, agc_template_info,
- * agc_scope_info: commit 11; agc_policy_decision: commit 11) — every service
- * header needs to name these as pointer types before then.
+ * The library-owned handles (convention 3): the context, sessions and the
+ * iterators of the list operations. Declared here because every service
+ * header names them; each is released by its own function.
  * -------------------------------------------------------------------------- */
 
 /* The service surface. One context binds a policy engine, a template

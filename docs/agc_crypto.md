@@ -2,8 +2,8 @@
 
 Normative for `include/agc/agc_crypto.h`, `include/agc/agc_metadata.h` and
 `include/agc/agc_key.h`.
-The reasoning behind each rule is in `representing_metadata.md` and
-`considerations.md`; this file states the rules and the decisions taken, with
+The reasoning behind each rule is in `representing_metadata.md`; this file
+states the rules and the decisions taken, with
 one line of justification each. The headers are the source of truth; this
 file follows them.
 
@@ -189,8 +189,8 @@ slices**: `nonce`, `iv`, `counter_block`, `block_counter`, `salt`, each an
 Decode copies every variable-length value there and never references the
 encoded bytes afterwards; the struct is valid for as long as `storage` is.
 
-**Slice arms are the v1 choice and may change.** The alternative studied in
-`considerations.md` is fixed inline arrays sized by header constants. Fixed
+**Slice arms are the v1 choice and may change.** The alternative studied
+during the design is fixed inline arrays sized by header constants. Fixed
 arrays make a standard-arm metadata self-contained with no storage region,
 but any change to an arm's bound or layout that leaves `sizeof` unchanged is
 undetectable by `struct_size`, and every application pays the largest arm.
