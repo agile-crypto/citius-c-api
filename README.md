@@ -11,7 +11,7 @@ checks; it builds no library. The implementation is
 installs these headers with it. (Until 2026-11 this repository also contained a C stub backend;
 it is in the git history before the commit "Make citius-c-api header-only".)
 
-**API version:** 2.0 (`AGC_API_VERSION_*` in `agc_abi.h`, the single version source), a mirror of
+**API version:** 1.0 (`AGC_API_VERSION_*` in `agc_abi.h`, the single version source), a mirror of
 citius/api v0.3.0.
 
 ## Layout
