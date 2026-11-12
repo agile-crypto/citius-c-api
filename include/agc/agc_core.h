@@ -80,13 +80,12 @@ typedef struct agc_ctx agc_ctx;
  * cross-process correlation and for relaying a session elsewhere. */
 typedef struct agc_session agc_session;
 
-/* OperationMetadata is NOT an opaque handle any more: it is the
- * caller-allocated struct defined in agc_metadata.h, and operations return
- * it encoded into caller regions. This forward declaration remains only so
- * that headers not yet converted (agc_stream.h, agc_establish.h; see
- * docs/implementation_progress.md) still parse. */
+/* Not opaque: agc_metadata is the caller-allocated struct defined in
+ * agc_metadata.h, agc_scope_info the one in agc_discovery_types.h. The
+ * typedefs live here, once, so that every header can name the types; the
+ * definitions are plain `struct x { ... };`, since repeating a typedef is
+ * valid C11 but not C99. */
 typedef struct agc_metadata agc_metadata;
-
 typedef struct agc_scope_info agc_scope_info;
 
 

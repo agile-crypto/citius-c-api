@@ -260,7 +260,7 @@ typedef struct agc_template_info_response {
  * information about one scope specification. Carries no storage of its own:
  * everything variable-length lives in the enclosing
  * agc_list_scopes_response's storage. */
-typedef struct agc_scope_info {
+struct agc_scope_info {
     /* REQUIRED. The scope specification: the primitive-specific scope enum
      * plus its filter properties. Inline; the additional_properties of its
      * arm are in the response's storage. */
@@ -279,7 +279,7 @@ typedef struct agc_scope_info {
      * storage. */
     const agc_crypto_operation *supported_operations;
     size_t                      supported_operations_count;
-} agc_scope_info;
+};
 
 /* ListScopesResponse. Caller-allocated: the caller supplies both the array
  * of records and the storage their strings are copied into.

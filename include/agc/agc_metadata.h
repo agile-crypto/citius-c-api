@@ -117,7 +117,7 @@ typedef struct agc_provider_output {
  * the items and strings behind user_context -- lives in the enclosing
  * agc_decode_metadata_result's storage when the library fills it, and in
  * caller memory when the caller builds one by hand. */
-typedef struct agc_metadata {
+struct agc_metadata {
     size_t              struct_size;                        /* AGC_INIT() sets it */
     uint32_t            key_version;                        /* version of the key that produced the artifact */
     char                api_version[AGC_API_VERSION_MAX_LEN];/* "major.minor", NUL-terminated */
@@ -133,7 +133,7 @@ typedef struct agc_metadata {
      * fails (docs/representing_metadata.md §6.7), so digest signing
      * requires AGC_ENCODING_PROTOBUF. */
     agc_hash_algorithm  digest_hash;
-} agc_metadata;
+};
 
 /* The decode result: the record plus the region it points into. Every
  * function that produces an agc_metadata fills one of these. */
