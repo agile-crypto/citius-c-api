@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
- * agc_key.h — KeyManagementService (11 RPCs; api/services/key_management_service.proto).
+ * agc_key.h — KeyManagementService (12 RPCs; api/services/key_management_service.proto).
  *
  * Functions only. Every request, record and response type they name is
  * defined in agc_key_types.h, which also states the STORAGE CONTRACT that

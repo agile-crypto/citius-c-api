@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
  *
- * agc_stream.h — StreamingCryptoService (43 RPCs;
+ * agc_stream.h — StreamingCryptoService (50 RPCs;
  * api/services/streaming_crypto_service.proto).
  *
  * Functions only. Every request and response type they name is defined in
