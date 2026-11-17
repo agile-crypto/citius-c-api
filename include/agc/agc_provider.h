@@ -31,9 +31,6 @@
  *     bare id string rather than a one-field request struct, and Register
  *     and Update take a bare agc_provider_instance, matching the same
  *     flattening applied in agc_policy.h.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_PROVIDER_H

@@ -22,9 +22,6 @@
  * beginning with struct_size (AGC_INIT). The library writes only into
  * regions the caller placed in the response; it allocates nothing the caller
  * sees and there is nothing to free. Rules: docs/agc_crypto.md.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_ESTABLISH_H

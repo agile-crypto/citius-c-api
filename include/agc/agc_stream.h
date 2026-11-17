@@ -49,9 +49,6 @@
  * returns a session, and agc_session_id() gives its operation_id, which
  * the single-shot message functions (agc_encrypt_message, ...) name their
  * session by, as the proto's requests do.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_STREAM_H

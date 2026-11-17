@@ -23,9 +23,6 @@
  *     agc_last_error (D4), leaving nothing to project.
  *   - Read and Delete take a bare `const char *name` rather than a
  *     one-field request struct, matching agc_read_key and agc_delete_key.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_POLICY_H

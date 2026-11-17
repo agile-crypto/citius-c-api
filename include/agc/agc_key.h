@@ -21,9 +21,6 @@
  * AGC_ERR_CRYPTO_NO_MATCHING_TEMPLATE. This is a struct with a documented
  * precedence rule rather than two functions, so an operator pinning a
  * template in policy does not require a call-site code change.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_KEY_H

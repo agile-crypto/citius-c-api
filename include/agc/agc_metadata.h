@@ -16,9 +16,6 @@
  * next to the ciphertext and hands back to decrypt/verify. Callers that need
  * fields decode those bytes into a caller-allocated agc_metadata with
  * agc_metadata_decode(). Nothing here is allocated by the library.
- *
- * STATUS: declarations only. Implementation follows in the next step; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_METADATA_H

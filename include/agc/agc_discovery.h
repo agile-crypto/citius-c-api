@@ -12,9 +12,6 @@
  *
  * The library allocates nothing the caller sees and there is nothing to
  * free, except the one iterator handle.
- *
- * STATUS: declarations only. Implementation follows; see
- * docs/implementation_progress.md.
  */
 
 #ifndef AGC_DISCOVERY_H
