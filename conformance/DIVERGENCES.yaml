@@ -172,57 +172,13 @@ divergences:
   # ScopeInfo.typical_use_cases and .supported_operations are in
   # agc_discovery_types.h. The id is not reused.
 
-  - id: DV-12
-    summary: >
-      ImplementationProperties.verification_framework, .hardware_features
-      and .unpatched_cves are not projected onto agc_impl_props (agc_provider.h).
-    reason: >
-      agc_provider.h's own SCOPING NOTE: this reconciliation implements the
-      subset of the ~13-field message a caller can meaningfully act on
-      (fips/constant-time/memory-safe posture) for a stub provider that has
-      no real audit trail, hardware feature list or CVE history behind it
-      to report. common_criteria_certified, no_known_cve, audits and
-      fips_140 are not exceptions to this: the two booleans are always
-      knowable (false, honestly) and the two message-typed fields are D6
-      opaque-handle candidates like any other, not scoped out.
-    scope:
-      - CreateKey (via KeyMetadata.implementation_properties)
-      - ListProviders
-      - GetProvider
-      - MatchProviders
-    functions:
-      - agc_provider_info_default_implementation
-      - agc_match_providers
-    dropped_fields:
-      ImplementationProperties: [verification_framework, hardware_features, unpatched_cves]
-    gateway_mapping: "unpopulated fields left at proto zero value"
-    rfc: null
+  # DV-12 withdrawn (2026-11-18): agc_impl_props now projects every field
+  # of ImplementationProperties, including verification_framework,
+  # hardware_features and unpatched_cves. The id is not reused.
 
-  # DV-13 withdrawn (2026-11-18): MigrationResult.source_instance_id /
-  # .target_instance_id, ArchivedKeyInfo.allowed_operations and
-  # StrategyOption.security_notes are all projected now
-  # (agc_migration_report, agc_strategy_option). The id is not reused.
-
-  - id: DV-14
-    summary: PolicyDecisionDetails.allowed_operations is not projected onto agc_policy_decision.
-    reason: >
-      policy.c's evaluator answers "is THIS operation allowed by this
-      policy", a single substring test against an opaque document (see its
-      own module comment); it never computes "list every operation this
-      policy allows", a materially different query this reconciliation does
-      not attempt against unstructured text. checks_performed IS projected
-      (always exactly the one operation checked) since that is the real
-      output of the check that did run.
-    scope:
-      - EvaluatePolicy
-      - BatchEvaluatePolicy
-    functions:
-      - agc_evaluate_policy
-      - agc_batch_evaluate_policy
-    dropped_fields:
-      PolicyDecisionDetails: [allowed_operations]
-    gateway_mapping: "left empty"
-    rfc: null
+  # DV-14 withdrawn (2026-11-18): PolicyDecisionDetails.allowed_operations
+  # was projected all along, in agc_policy_decision_details. The id is not
+  # reused.
 
   - id: DV-15
     summary: WIRE_V1 cannot encode OperationMetadata.digest_hash.

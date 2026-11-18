@@ -60,19 +60,59 @@ extern "C" {
 /* --------------------------------------------------------------------------
  * ImplementationProperties (api/types/implementation.proto)
  *
- * Embedded by value in agc_key_info. Carries no storage of its own: its
- * one string lives in the enclosing record's storage.
+ * Embedded by value in agc_key_info and the provider records. Carries no
+ * storage of its own: when the library fills one, its strings, arrays and
+ * map live in the enclosing record's storage ("in storage" below); when the
+ * caller passes one in, they are borrowed for the call. Every string is
+ * NUL-terminated and "" when the field is unset.
  * -------------------------------------------------------------------------- */
 
+/* AuditReport: one security audit of an implementation. */
+typedef struct agc_audit_report {
+    const char   *auditor;           /* in the enclosing record's storage */
+    agc_timestamp report_date;
+    const char   *report_id;         /* in storage */
+    const char   *scope;             /* in storage */
+    const char   *findings_summary;  /* in storage */
+    const char   *report_url;        /* in storage */
+} agc_audit_report;
+
 typedef struct agc_impl_props {
+    /* fips_140 (Fips140Certification), flattened. */
     int               fips_certified;
     agc_fips140_level fips_level;
+    const char       *fips_certificate_number;  /* in storage */
+    const char       *fips_module_name;         /* in storage */
+    agc_timestamp     fips_validation_date;
+    agc_timestamp     fips_expiration_date;
+
+    agc_tribool       common_criteria_certified;
+
+    /* Security audits performed on this implementation. Array in storage. */
+    const agc_audit_report *audits;
+    size_t            audits_count;
+
     agc_tribool       formally_verified;
+    const char       *verification_framework;   /* in storage; e.g. "HACL*" */
     agc_tribool       memory_safe_language;
-    const char       *implementation_language;  /* NUL-terminated, in the enclosing record's storage; may be "" */
+    const char       *implementation_language;  /* in storage */
     agc_tribool       constant_time;
     agc_tribool       side_channel_hardened;
     agc_tribool       hardware_accelerated;
+
+    /* Hardware features used, e.g. "aes-ni". Array of strings in storage. */
+    const char      **hardware_features;
+    size_t            hardware_features_count;
+
+    agc_tribool       no_known_cve;
+
+    /* Known unpatched CVEs. Array of strings in storage. */
+    const char      **unpatched_cves;
+    size_t            unpatched_cves_count;
+
+    /* Properties without a typed field (map<string, string>): items and
+     * strings in storage. */
+    agc_kv_list       additional;
 } agc_impl_props;
 
 /* --------------------------------------------------------------------------
