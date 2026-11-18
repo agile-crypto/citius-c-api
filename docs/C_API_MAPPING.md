@@ -187,7 +187,7 @@ accessors; it became caller-allocated with the rest of the data path (D6).
 ## Divergences (where C and proto deliberately differ)
 
 Every deliberate deviation is in [`conformance/DIVERGENCES.yaml`](../conformance/DIVERGENCES.yaml)
-(DV-01 through DV-14; DV-13 is withdrawn), not scattered across comments — that file is what
+(DV-01 through DV-16; DV-04, DV-11 and DV-13 are withdrawn), not scattered across comments — that file is what
 `conformance/tier1c_fields.py` actually loads and checks the header text against. A construct in
 the C headers with no wire counterpart, and not listed there, is a bug by definition.
 

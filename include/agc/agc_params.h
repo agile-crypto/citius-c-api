@@ -3,12 +3,11 @@
  * agc_params.h — Abstract Cryptographic API, C binding: operation-time
  * parameters (api/types/operation_params.proto).
  *
- * HAND-WRITTEN. Each proto `oneof` becomes one tagged union type here, per
- * the rule in docs/harness_suggestions.md: a union plus a `kind` enum whose
- * values ARE the proto field numbers of the arms. That rule holds wherever a
- * oneof appears in exactly ONE enclosing message. Two tagging conventions are
- * therefore in play, and mixing them up is a real correctness bug, not a
- * style choice:
+ * HAND-WRITTEN. Each proto `oneof` becomes one tagged union type here: a
+ * union plus a `kind` enum whose values ARE the proto field numbers of the
+ * arms. That rule holds wherever a oneof appears in exactly ONE enclosing
+ * message. Two tagging conventions are therefore in play, and mixing them
+ * up is a real correctness bug, not a style choice:
  *
  *   - Tags ARE the proto field numbers, and the harness check enforces it:
  *       agc_custom_params_kind   -- CustomOperationParams.params (10, 11)
