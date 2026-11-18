@@ -242,10 +242,15 @@ typedef struct agc_migration_report {
     const char            *wrapping_key_name;     /* NUL-terminated, in storage; "" if none */
 
     /* ArchivedKeyInfo -- present only for REKEY_AND_ARCHIVE. When
-     * has_archived_key is 0 the three fields below are NULL / absent. */
+     * has_archived_key is 0 the fields below are NULL, 0 or absent. */
     int                    has_archived_key;
     const char            *archived_key_name;     /* NUL-terminated, in storage */
     const char            *archived_provider_id;  /* NUL-terminated, in storage */
+    /* The restricted operations the archived key still allows, e.g.
+     * DECRYPT and UNWRAP_KEY. Array in storage; empty when the
+     * implementation does not report them. */
+    const agc_crypto_operation *archived_allowed_operations;
+    size_t                 archived_allowed_operations_count;
     agc_timestamp          archived_expiration;
 } agc_migration_report;
 
@@ -327,6 +332,11 @@ typedef struct agc_strategy_option {
     agc_migration_strategy strategy;
     int                    feasible;
     const char            *infeasibility_reason;  /* NUL-terminated, in the report's storage; "" if feasible */
+    /* What the strategy implies for the key's material and the data it
+     * protects, whether or not it is feasible. Array of NUL-terminated
+     * strings in the report's storage; may be empty. */
+    const char           **security_notes;
+    size_t                 security_notes_count;
     int32_t                complexity_level;
 } agc_strategy_option;
 

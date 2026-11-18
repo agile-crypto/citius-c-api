@@ -231,34 +231,10 @@ divergences:
     gateway_mapping: "unpopulated fields left at proto zero value"
     rfc: null
 
-  - id: DV-13
-    summary: >
-      MigrationResult.source_instance_id / .target_instance_id and
-      ArchivedKeyInfo.allowed_operations are not projected onto
-      agc_migration_report. StrategyOption.security_notes is not projected
-      onto the feasibility report's per-option accessor.
-    reason: >
-      This reconciliation's KeyInfo tracks only the fixed static provider
-      TYPE ("stub"), never a caller-registered ProviderService instance id
-      (see agc_delete_provider_instance's own doc comment) -- there is no
-      instance concept bound to a key for a migration report to name on
-      either side. Similarly, no per-operation permission set is computed
-      for an archived key (the lifecycle model is coarser than that), and
-      the synthetic feasibility options in agc_validate_key_operation
-      generate an infeasibility_reason but never a separate free-text notes
-      list -- there is nothing genuine to put in one.
-    scope:
-      - MigrateKey
-      - ValidateKeyOperation
-    functions:
-      - agc_migrate_key
-      - agc_validate_key_operation
-    dropped_fields:
-      MigrationResult: [source_instance_id, target_instance_id]
-      ArchivedKeyInfo: [allowed_operations]
-      StrategyOption: [security_notes]
-    gateway_mapping: "unpopulated fields left at proto zero value"
-    rfc: null
+  # DV-13 withdrawn (2026-11-18): MigrationResult.source_instance_id /
+  # .target_instance_id, ArchivedKeyInfo.allowed_operations and
+  # StrategyOption.security_notes are all projected now
+  # (agc_migration_report, agc_strategy_option). The id is not reused.
 
   - id: DV-14
     summary: PolicyDecisionDetails.allowed_operations is not projected onto agc_policy_decision.
