@@ -26,7 +26,7 @@ divergences:
       Verification returns AGC_ERR_CRYPTO_SIGNATURE_INVALID /
       AGC_ERR_CRYPTO_AUTHENTICATION_FAILED instead of AGC_OK + valid=false.
     reason: >
-      Fail-closed twice (D9): *out_valid is set to 0 before any work, and a
+      Fail-closed twice (D9): resp->valid is 0 before any work, and a
       negative result also returns a non-OK agc_rc, so the classic C bug of
       "rc ignored, valid left uninitialised" is caught by either check
       alone.
