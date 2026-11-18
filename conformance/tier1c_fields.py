@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1c -- request/response field presence (docs/history/RECONCILIATION_PLAN.md §7).
 
 For every RPC in the pinned descriptor, takes its request and response

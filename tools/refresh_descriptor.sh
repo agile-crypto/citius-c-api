@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Regenerates conformance/api_descriptor.binpb from a proto checkout.
 #
 # This is intentionally NOT run by the build. Bumping the pinned descriptor is
@@ -9,13 +10,13 @@
 # Usage: tools/refresh_descriptor.sh /path/to/proto
 #
 # The proto directory is either
-#   - the `proto/` directory of a `citius/api` checkout, whose files sit at its
+#   - the `proto/` directory of a `agile-crypto/api` checkout, whose files sit at its
 #     top level (messages/, services/, types/, api.proto), or
 #   - the `proto/` directory of a citius-server checkout, whose files sit
 #     under api/.
 # The descriptor always names the files api/...: tools/gen_agc_types.py and
 # the conformance checks select the public surface by that prefix. For the
-# citius/api layout the files are copied under api/ and their imports of each
+# agile-crypto/api layout the files are copied under api/ and their imports of each
 # other rewritten to match; nothing else changes.
 set -euo pipefail
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: Apache-2.0
 # Tier 4 -- ABI stability (docs/history/RECONCILIATION_PLAN.md §7): a layout change to an
 # EXISTING field must fail this check unless it comes with a version-script
 # entry and a rationale. Uses libabigail's abidw/abidiff, the same tool

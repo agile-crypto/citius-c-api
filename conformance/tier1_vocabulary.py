@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1 -- vocabulary conformance (docs/history/RECONCILIATION_PLAN.md §7).
 
 Loads the pinned FileDescriptorSet directly (not conformance/manifest.json,

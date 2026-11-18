@@ -15,14 +15,14 @@ drift.
 
 | | |
 |---|---|
-| Source repo | `citius/api` |
+| Source repo | `agile-crypto/api` |
 | Source tag | `v0.3.0` (the release citius-api-go v0.3.0, used by citius-core and citius-server) |
 | Source commit | `2eb364a69b5a7ba41d3770af35248f452930a787` |
 | Source path | `proto/` (files at its top level; recorded under `api/`, see below) |
 | `shasum -a 256 api_descriptor.binpb` | `fd3978a909eafaa86e2e99d6ea1b32cd0addfb139eb8451cab6a54076df1c27c` |
 | Pinned on | 2026-11-04 |
 
-`citius/api` keeps its files at the top of `proto/`, while citius-server
+`agile-crypto/api` keeps its files at the top of `proto/`, while citius-server
 kept them under `api/`. The descriptor names them `api/...` either way, as
 `tools/gen_agc_types.py` and the conformance checks expect:
 `tools/refresh_descriptor.sh` copies the files under `api/` and rewrites

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Generates OperationMetadata golden vectors using the REAL protobuf
 library against the pinned descriptor (conformance/api_descriptor.binpb),
 never a hand-written codec.

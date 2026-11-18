@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 """Tier 1b -- RPC <-> C entry-point surface bijection (docs/history/RECONCILIATION_PLAN.md §7).
 
 Loads the pinned FileDescriptorSet and conformance/rpc_manifest.yaml, and

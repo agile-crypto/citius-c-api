@@ -7,12 +7,12 @@ transliterated wire format.
 
 **This repository is header-only.** It holds the contract, its generator and its conformance
 checks; it builds no library. The implementation is
-[citius-rust](https://github.ibm.com/citius/citius-rust), which ships `libagilecrypto` and
+[citius-rust](https://github.com/agile-crypto/citius-rust), which ships `libagilecrypto` and
 installs these headers with it. (Until 2026-11 this repository also contained a C stub backend;
 it is in the git history before the commit "Make citius-c-api header-only".)
 
 **API version:** 1.0 (`AGC_API_VERSION_*` in `agc_abi.h`, the single version source), a mirror of
-citius/api v0.3.0.
+agile-crypto/api v0.3.0.
 
 ## Layout
 
@@ -86,3 +86,7 @@ Behaviour behind the headers is tested by the implementation: citius-rust runs i
 `conformance/golden/operation_metadata_vectors.json` holds OperationMetadata messages encoded by
 real protobuf, for implementations to check their metadata codec against
 (`conformance/golden/gen_metadata_vectors.py` documents how they are made).
+
+## License
+
+Apache License 2.0; see [LICENSE](LICENSE).

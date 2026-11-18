@@ -1,12 +1,12 @@
 # C API Mapping
 
 > **Note (2026-11):** this repository is header-only. The implementation is
-> [citius-rust](https://github.ibm.com/citius/citius-rust). D6 and D11 were revised before 1.0:
+> [citius-rust](https://github.com/agile-crypto/citius-rust). D6 and D11 were revised before 1.0:
 > records and metadata are caller-allocated structs, not opaque handles.
 
-How `include/agc/*.h` derives from `caas.crypto.v1` (`citius/api` v0.3.0), and why each
+How `include/agc/*.h` derives from `caas.crypto.v1` (`agile-crypto/api` v0.3.0), and why each
 foundational decision (D1-D20, `docs/history/RECONCILIATION_PLAN.md` §1) is shaped the way it is. Every claim
-below cites a real location: the proto side as `citius/api@2eb364a:<path>:<line>` (the exact
+below cites a real location: the proto side as `agile-crypto/api@2eb364a:<path>:<line>` (the exact
 commit `conformance/api_descriptor.binpb` is pinned to — see `conformance/DESCRIPTOR_PROVENANCE.md`;
 not a link, since it is a different repository, but a real, checked citation, not a paraphrase),
 the C side as a normal path into this repository.
@@ -28,13 +28,13 @@ One header per proto service file, `agc_`/`AGC_` prefixed throughout.
 
 | Proto service file | C header |
 |---|---|
-| `citius/api@2eb364a:proto/services/key_management_service.proto` | [`include/agc/agc_key.h`](../include/agc/agc_key.h) |
-| `citius/api@2eb364a:proto/services/crypto_service.proto` | [`include/agc/agc_crypto.h`](../include/agc/agc_crypto.h) |
-| `citius/api@2eb364a:proto/services/streaming_crypto_service.proto` | [`include/agc/agc_stream.h`](../include/agc/agc_stream.h) |
-| `citius/api@2eb364a:proto/services/key_establishment_service.proto` | [`include/agc/agc_establish.h`](../include/agc/agc_establish.h) |
-| `citius/api@2eb364a:proto/services/crypto_policy_service.proto` | [`include/agc/agc_policy.h`](../include/agc/agc_policy.h) |
-| `citius/api@2eb364a:proto/services/discovery_service.proto` | [`include/agc/agc_discovery.h`](../include/agc/agc_discovery.h) |
-| `citius/api@2eb364a:proto/services/provider_service.proto` | [`include/agc/agc_provider.h`](../include/agc/agc_provider.h) |
+| `agile-crypto/api@2eb364a:proto/services/key_management_service.proto` | [`include/agc/agc_key.h`](../include/agc/agc_key.h) |
+| `agile-crypto/api@2eb364a:proto/services/crypto_service.proto` | [`include/agc/agc_crypto.h`](../include/agc/agc_crypto.h) |
+| `agile-crypto/api@2eb364a:proto/services/streaming_crypto_service.proto` | [`include/agc/agc_stream.h`](../include/agc/agc_stream.h) |
+| `agile-crypto/api@2eb364a:proto/services/key_establishment_service.proto` | [`include/agc/agc_establish.h`](../include/agc/agc_establish.h) |
+| `agile-crypto/api@2eb364a:proto/services/crypto_policy_service.proto` | [`include/agc/agc_policy.h`](../include/agc/agc_policy.h) |
+| `agile-crypto/api@2eb364a:proto/services/discovery_service.proto` | [`include/agc/agc_discovery.h`](../include/agc/agc_discovery.h) |
+| `agile-crypto/api@2eb364a:proto/services/provider_service.proto` | [`include/agc/agc_provider.h`](../include/agc/agc_provider.h) |
 
 This one-to-one mapping is what makes `conformance/tier1b_surface.py`'s RPC-count-per-service check
 possible without a lookup table: the service name in `conformance/rpc_manifest.yaml` names the
@@ -44,7 +44,7 @@ header directly.
 
 Every function returns `agc_rc`, `AGC_OK == 0`. Wire error codes are `-(1000 + CryptoErrorCode)`.
 
-- Proto: `citius/api@2eb364a:proto/types/common.proto:784`, `enum CryptoErrorCode { ... }`.
+- Proto: `agile-crypto/api@2eb364a:proto/types/common.proto:784`, `enum CryptoErrorCode { ... }`.
 - C: [`include/agc/agc_types.h`](../include/agc/agc_types.h), e.g.
   `#define AGC_ERR_CRYPTO_KEY_NOT_FOUND ((agc_rc)-1001) /* wire value 1 */` — the arithmetic
   transform (`-rc - 1000` recovers the wire value) means a gateway needs no lookup table, and the
@@ -55,7 +55,7 @@ Every function returns `agc_rc`, `AGC_OK == 0`. Wire error codes are `-(1000 + C
 Every byte output is an `agc_buf` the caller places in the response, paired with a length field.
 The library never hands back an allocation for the caller to free.
 
-- Proto: `citius/api@2eb364a:proto/messages/encryption.proto:38-39`, `EncryptResponse.ciphertext`
+- Proto: `agile-crypto/api@2eb364a:proto/messages/encryption.proto:38-39`, `EncryptResponse.ciphertext`
   (`bytes`) — the wire message has no size-query concept; it is a pure RPC response.
 - C: [`include/agc/agc_crypto.h`](../include/agc/agc_crypto.h),
   `agc_rc agc_encrypt(agc_ctx *ctx, const agc_encrypt_request *req, agc_encrypt_response *resp);`
@@ -72,7 +72,7 @@ caller-allocated C structs. Their variable-length fields point into a `storage` 
 supplies in the enclosing response (the STORAGE CONTRACT). Only what holds secret state or a
 lifecycle is an opaque, library-owned handle: `agc_ctx`, `agc_session` and the iterators.
 
-- Proto: `citius/api@2eb364a:proto/messages/key_management.proto:160`, `message KeyMetadata { ... }`.
+- Proto: `agile-crypto/api@2eb364a:proto/messages/key_management.proto:160`, `message KeyMetadata { ... }`.
 - C: [`include/agc/agc_key_types.h`](../include/agc/agc_key_types.h), `agc_key_info` (descriptive
   only: fields and pointers) inside `agc_key_info_response`, which owns `agc_buf storage` and
   `size_t storage_used`.
@@ -84,7 +84,7 @@ work is done, can be placed in stack, pooled or locked memory, and needs no free
 PKCS#11 analogue is `C_GetAttributeValue` writing into caller memory while the key stays a handle.
 
 *The price.* The opaque handle kept the 44-arm `AlgorithmDetails.algorithm` oneof
-(`citius/api@2eb364a:proto/types/templates.proto:45`, `oneof algorithm` at :63) out of the ABI. Projected as
+(`agile-crypto/api@2eb364a:proto/types/templates.proto:45`, `oneof algorithm` at :63) out of the ABI. Projected as
 `agc_algorithm_params` ([`include/agc/agc_algorithm_params.h`](../include/agc/agc_algorithm_params.h)),
 embedded by value in `agc_template_info`, its layout is now part of the ABI: an arm that would grow
 the union, or a change to an existing arm, needs a new major version under the embedded-struct rule
@@ -94,7 +94,7 @@ in [`include/agc/agc_abi.h`](../include/agc/agc_abi.h).
 
 `optional bool` → `agc_tribool{UNSET=0, FALSE=1, TRUE=2}`.
 
-- Proto: `citius/api@2eb364a:proto/types/implementation.proto:54`,
+- Proto: `agile-crypto/api@2eb364a:proto/types/implementation.proto:54`,
   `optional bool formally_verified = 4;` (inside `ImplementationProperties`, line 35).
 - C: [`include/agc/agc_key_types.h`](../include/agc/agc_key_types.h),
   `agc_impl_props.formally_verified` of type `agc_tribool` (defined in
@@ -107,10 +107,10 @@ default for every tribool-typed filter field in the API.
 
 Verification never returns success-shaped output for a failed check.
 
-- Proto: `citius/api@2eb364a:proto/messages/signing.proto:62`, `bool valid = 1;` inside
+- Proto: `agile-crypto/api@2eb364a:proto/messages/signing.proto:62`, `bool valid = 1;` inside
   `VerifyResponse`; likewise `DigestVerifyResponse` (:131), `VerifyFinalResponse` (:216),
   `VerifyMessageResponse` (:341), `VerifyMessageNextResponse` (:368) and
-  `citius/api@2eb364a:proto/messages/mac.proto:63`.
+  `agile-crypto/api@2eb364a:proto/messages/mac.proto:63`.
 - C: [`include/agc/agc_crypto.h`](../include/agc/agc_crypto.h),
   `agc_rc agc_verify(agc_ctx *ctx, const agc_verify_request *req, agc_verify_response *resp);`
   — `resp->valid` is 0 until proven otherwise, and a failed check also returns
@@ -119,7 +119,7 @@ Verification never returns success-shaped output for a failed check.
 
 ## D10 — Sessions with a caller-suppliable `operation_id`
 
-- Proto: `citius/api@2eb364a:proto/messages/encryption.proto:93`, `string operation_id = 2;`
+- Proto: `agile-crypto/api@2eb364a:proto/messages/encryption.proto:93`, `string operation_id = 2;`
   inside `EncryptInitRequest` (line 73) — a REQUEST field, settable by the caller, not
   server-generated.
 - C: [`include/agc/agc_stream_types.h`](../include/agc/agc_stream_types.h), `operation_id`
@@ -129,7 +129,7 @@ Verification never returns success-shaped output for a failed check.
 
 ## D11 — `OperationMetadata` as encoded bytes plus a caller-allocated decode (revised)
 
-- Proto: `citius/api@2eb364a:proto/messages/metadata.proto:308`, `message OperationMetadata { ... }`.
+- Proto: `agile-crypto/api@2eb364a:proto/messages/metadata.proto:308`, `message OperationMetadata { ... }`.
 - C: every operation returns the metadata ENCODED, encoding byte first, into a caller `agc_buf`.
   `agc_metadata_decode()` ([`include/agc/agc_metadata.h`](../include/agc/agc_metadata.h)) fills a
   caller-allocated `agc_metadata` inside an `agc_decode_metadata_result`, whose `storage` holds
@@ -144,7 +144,7 @@ accessors; it became caller-allocated with the rest of the data path (D6).
 
 ## D12 — Iterators for paged lists
 
-- Proto: `citius/api@2eb364a:proto/messages/key_management.proto:220-221`,
+- Proto: `agile-crypto/api@2eb364a:proto/messages/key_management.proto:220-221`,
   `int32 page_size = 10; string page_token = 11;` inside `ListKeysRequest` (line 212).
 - C: [`include/agc/agc_key.h`](../include/agc/agc_key.h),
   `agc_rc agc_list_keys(agc_ctx *ctx, const agc_list_keys_params *params, agc_key_iter **out_iter);`
@@ -154,9 +154,9 @@ accessors; it became caller-allocated with the rest of the data path (D6).
 
 ## D14 — Boolean polarity always follows the proto
 
-- Proto: `citius/api@2eb364a:proto/types/implementation.proto:183`, `bool disabled = 4;`
+- Proto: `agile-crypto/api@2eb364a:proto/types/implementation.proto:183`, `bool disabled = 4;`
   inside `ProviderTemplateSupport` (line 164); line 310, `bool disabled = 6;` inside
-  `ProviderInstance` (line 280); and `citius/api@2eb364a:proto/services/provider_service.proto:170`,
+  `ProviderInstance` (line 280); and `agile-crypto/api@2eb364a:proto/services/provider_service.proto:170`,
   `bool enabled_only = 3;` (`ListProviderInstancesRequest`) and :227, `bool include_disabled = 3;`
   (`MatchProvidersRequest`).
 - C: [`include/agc/agc_provider_types.h`](../include/agc/agc_provider_types.h),
