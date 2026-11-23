@@ -75,6 +75,10 @@ typedef struct agc_establish_key_response {
 
     agc_buf      storage;       /* IN: caller region for key_info's strings, key bytes and map */
     size_t       storage_used;  /* OUT: bytes consumed, or required */
+
+    /* KeyMetadata.template_info for key_info; see agc_key_info_response. */
+    agc_template_info *template_info;
+    int                has_template_info;
 } agc_establish_key_response;
 
 /* --------------------------------------------------------------------------
@@ -188,6 +192,10 @@ typedef struct agc_encapsulate_key_response {
 
     agc_buf      storage;       /* IN: caller region for key_info's strings, key bytes and map */
     size_t       storage_used;  /* OUT: bytes consumed, or required */
+
+    /* KeyMetadata.template_info for key_info; see agc_key_info_response. */
+    agc_template_info *template_info;
+    int                has_template_info;
 } agc_encapsulate_key_response;
 
 typedef struct agc_decapsulate_key_request {

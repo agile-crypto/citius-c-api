@@ -52,6 +52,7 @@
 
 #include "agc_core.h"
 #include "agc_scope.h"
+#include "agc_discovery_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -178,6 +179,31 @@ typedef struct agc_key_info_response {
     agc_key_info key_info;
     agc_buf      storage;       /* IN: caller region for the record's strings, key bytes and map */
     size_t       storage_used;  /* OUT: bytes consumed, or required */
+
+    /* KeyMetadata.template_info: the key version's template, as
+     * agc_get_template reports it. agc_key_info carries only its id: it is
+     * embedded in other structs, so it cannot grow (agc_abi.h).
+     *   IN:  NULL (the AGC_INIT default) does not ask for it. Otherwise the
+     *        caller's own agc_template_info, AGC_INIT'ed; the library writes
+     *        it there, its strings and arrays in `storage`, and their size
+     *        counts in storage_used.
+     *   OUT: has_template_info is non-zero when *template_info was written;
+     *        0 when not asked for, or when the template is no longer in the
+     *        catalog.
+     * The same pair, with the same meaning, ends every response that
+     * carries an agc_key_info. */
+    agc_template_info *template_info;
+    int                has_template_info;
+
+    /* CreateKeyResponse.security_guarantees: what the chosen template
+     * guarantees for the key's scope -- the guarantees of the template's
+     * scoped capability for that scope, or else the template's own.
+     * Written by agc_create_key only; has_security_guarantees is 0 for every
+     * other call, and when the template declares none. Its
+     * additional_properties are in `storage`. (CreateKeyResponse's
+     * implementation_properties is key_info.implementation_props.) */
+    int                     has_security_guarantees;
+    agc_security_guarantees security_guarantees;
 } agc_key_info_response;
 
 /* --------------------------------------------------------------------------
@@ -318,6 +344,10 @@ typedef struct agc_migrate_key_response {
 
     agc_buf              storage;       /* IN: caller region for the records requested above */
     size_t               storage_used;  /* OUT: bytes consumed, or required */
+
+    /* KeyMetadata.template_info for key_info; see agc_key_info_response. */
+    agc_template_info *template_info;
+    int                has_template_info;
 } agc_migrate_key_response;
 
 /* --------------------------------------------------------------------------
@@ -457,6 +487,10 @@ typedef struct agc_export_key_response {
      * computes none. Not secret. */
     agc_buf         kcv;           /* IN: caller region. OUT: written */
     size_t          kcv_len;       /* OUT: bytes written, or required */
+
+    /* KeyMetadata.template_info for key_info; see agc_key_info_response. */
+    agc_template_info *template_info;
+    int                has_template_info;
 } agc_export_key_response;
 
 typedef struct agc_import_key_params {
